@@ -1,0 +1,139 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useChannelStore } from '@xayaarcade/sdk';
+import { useLanguage } from './LanguageProvider';
+import { submitPulseInput } from '@/hooks/use-pulse-input';
+import type { PulseState } from '@/lib/pulse/codec';
+import { primaryLane, secondaryLane } from '@/lib/pulse/codec';
+import { featuredPlayers, findPlayerName } from '@/lib/pulse/players';
+import { keeperChoice } from '@/lib/pulse/channel';
+import './PulseBoard.css';
+
+const labels = ['left', 'centre', 'right'] as const;
+export default function PulseBoard({ localPlayerIndex }: { localPlayerIndex: number }) {
+  const { t } = useLanguage();
+  const raw = useChannelStore(s => s.boardState) as PulseState | null;
+  const channelId = useChannelStore(s => s.channelId);
+  const game = raw && Array.isArray(raw.goals) && raw.goals.length === 2 ? raw : null;
+  const [guard, setGuard] = useState<number | null>(null);
+  const [lockedGuard, setLockedGuard] = useState<number | null>(null);
+  const [aim, setAim] = useState<number | null>(null);
+  const [playerId, setPlayerId] = useState<number | null>(null);
+  const [playerName, setPlayerName] = useState('');
+  const [lookup, setLookup] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const myTurn = game?.turn === localPlayerIndex && game.phase !== 4;
+  const picking = myTurn && game?.phase === 0;
+  const defending = myTurn && game?.phase === 1;
+  const shooting = myTurn && game?.phase === 2;
+  const used = game?.used[localPlayerIndex] ?? [];
+
+  useEffect(() => {
+    setGuard(null); setLockedGuard(null); setAim(null); setPlayerId(null); setPlayerName('');
+    setBusy(false); setError('');
+  }, [game?.turnCount]);
+  useEffect(() => {
+    if (game?.phase === 1 && game.turn === localPlayerIndex) {
+      const saved = keeperChoice(channelId, localPlayerIndex, game.kick);
+      setLockedGuard(saved); setGuard(saved);
+    }
+  }, [channelId, game?.phase, game?.kick, game?.turn, localPlayerIndex]);
+  useEffect(() => {
+    if ((game?.phase !== 1 && game?.phase !== 2) || !game.pendingPlayer) return;
+    let live = true;
+    void findPlayerName(game.pendingPlayer).then(name => { if (live) setPlayerName(name ?? '#' + game.pendingPlayer); });
+    return () => { live = false; };
+  }, [game?.phase, game?.pendingPlayer]);
+  useEffect(() => {
+    if (!busy) return;
+    const timer = window.setTimeout(() => { setBusy(false); setError(t.slow); }, 15000);
+    return () => window.clearTimeout(timer);
+  }, [busy, t]);
+
+  async function selectPlayer(id: number) {
+    if (used.includes(id)) { setError(t.cannotReuse); return; }
+    setError('');
+    try {
+      const name = await findPlayerName(id);
+      if (!name) { setError(t.playerMissing); return; }
+      setPlayerId(id); setPlayerName(name);
+    } catch { setError(t.lookupFailed); }
+  }
+  async function send() {
+    if (!game || !myTurn || busy) return;
+    const input = game.phase === 0 && playerId !== null
+      ? { type: 'pick' as const, kick: game.kick, playerId }
+      : game.phase === 1 && guard !== null
+      ? { type: 'guard' as const, kick: game.kick, lane: guard }
+      : game.phase === 2 && aim !== null
+        ? { type: 'shot' as const, kick: game.kick, lane: aim }
+        : null;
+    if (!input) return;
+    setBusy(true); setError('');
+    try {
+      if (!await submitPulseInput(input)) { setBusy(false); setError(t.disconnected); }
+    } catch { setBusy(false); setError(t.disconnected); }
+  }
+  const finished = game?.phase === 4;
+  const result = game?.lastResult === 1 ? t.goal : game?.lastResult === 2 ? t.saved : game?.lastResult === 3 ? t.missed : '—';
+  const instructions = !game ? t.waiting :
+    finished ? game.winner === -2 ? t.draw : game.winner === localPlayerIndex ? t.yourWin : t.rivalWin :
+    game.phase === 3 ? t.revealPrompt : picking ? t.pickPrompt : defending ? t.guardPrompt : shooting ? t.shotPrompt : t.waiting;
+  const displayId = defending || shooting ? game?.pendingPlayer ?? null : playerId;
+  const allowed = displayId === null ? [] : [primaryLane(displayId), secondaryLane(displayId)];
+
+  return <main className="pulse-root">
+    <header className="pulse-top">
+      <div><span className="pulse-kicker">{t.subtitle}</span><h1>{t.title}</h1></div>
+      <span className="pulse-free">{t.playFree}</span>
+    </header>
+    <div className="pulse-score">
+      <div className={localPlayerIndex === 0 ? 'mine' : ''}><small>{localPlayerIndex === 0 ? t.you : t.rival}</small><strong>{game?.goals[0] ?? 0}</strong></div>
+      <div className="pulse-round"><span>{t.round} {Math.min((game?.kick ?? 0) + 1, 6)} {t.of} 6</span>
+        <div className="pulse-dots">{Array.from({ length: 6 }, (_, i) => <i key={i} className={i < (game?.kick ?? 0) ? 'done' : i === game?.kick ? 'current' : ''} />)}</div>
+      </div>
+      <div className={localPlayerIndex === 1 ? 'mine' : ''}><small>{localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{game?.goals[1] ?? 0}</strong></div>
+    </div>
+    <section className="pulse-arena" aria-label="Penalty goal">
+      <div className="pulse-floodlight left-light" /><div className="pulse-floodlight right-light" />
+      <div className="pulse-goal">
+        {labels.map((key, lane) => {
+          const chosen = defending ? guard === lane : shooting ? aim === lane : false;
+          const last = finished || game?.phase === 0;
+          const marker = last && game?.lastGuard === lane ? 'keeper' : last && game?.lastShot === lane ? 'ball' : '';
+          return <button type="button" key={key} className={'pulse-zone ' + (chosen ? 'selected ' : '') + marker}
+            disabled={(!defending && !shooting) || busy || (defending && lockedGuard !== null && lockedGuard !== lane)}
+            aria-pressed={chosen}
+            onClick={() => defending ? setGuard(lane) : setAim(lane)}>
+            <span className="pulse-zone-icon">{marker === 'keeper' ? '🧤' : marker === 'ball' ? '⚽' : chosen ? '✦' : ''}</span>
+            <span>{t[key]}</span>
+          </button>;
+        })}
+      </div>
+      <div className="pulse-spot"><span>⚽</span></div>
+      <div className="pulse-pitch-arc" />
+    </section>
+    <section className="pulse-console">
+      <div className="pulse-step"><span className="pulse-step-index">{game?.phase === 0 ? '01' : game?.phase === 1 ? '02' : game?.phase === 2 ? '03' : game?.phase === 3 ? '04' : 'FT'}</span>
+        <div><small>{defending ? t.keeper : picking || shooting ? t.striker : t.result}</small><p aria-live="polite">{instructions}</p></div></div>
+      {picking && <div className="pulse-picker">
+        <label htmlFor="pulse-player-id">{t.playerId}</label>
+        <div className="pulse-search"><input id="pulse-player-id" type="number" min="1" max="523571" inputMode="numeric" value={lookup}
+          onChange={e => setLookup(e.target.value)} placeholder="1100" />
+          <button type="button" onClick={() => void selectPlayer(Number(lookup))}>{t.search}</button></div>
+        <div className="pulse-featured"><small>{t.featured}</small><div>{featuredPlayers.map(p =>
+          <button type="button" key={p.id} disabled={used.includes(p.id)} className={playerId === p.id ? 'active' : ''}
+            onClick={() => void selectPlayer(p.id)}>{p.name}</button>)}</div></div>
+      </div>}
+      {displayId !== null && (picking || defending || shooting) && <div className="pulse-player"><strong>{playerName || '#' + displayId}</strong><span>#{displayId}</span>
+        <small>{t.validLanes}: {allowed.map(x => t[labels[x]]).join(' + ')}</small></div>}
+      {(picking || defending || shooting) && <button type="button" className="pulse-action" disabled={busy || picking && playerId === null || defending && guard === null || shooting && aim === null}
+        onClick={() => void send()}>{picking ? t.confirmPlayer : defending ? t.dive : t.shoot}<span>↗</span></button>}
+      {!!game?.kick && <div className="pulse-last"><span>{t.result}</span><strong>{result}</strong></div>}
+      {error && <p role="alert" className="pulse-error">{error}</p>}
+    </section>
+    <footer>{t.snapshot}</footer>
+  </main>;
+}

@@ -1,0 +1,60 @@
+{
+  "name": "soccerverse-penalty-pulse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Penalty Pulse, a two-player Soccerverse shootout for XAYA Arcade.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "arcadeGameLibDir": "src/lib/pulse",
+  "scripts": {
+    "dev": "next dev --turbopack -p 3001",
+    "dev:playground": "WS_PROXY_DESTINATION=${PLAYGROUND_ORIGIN:?Set PLAYGROUND_ORIGIN, e.g. https://test-arcade.xaya.io}/relay CHAIN_PROXY_DESTINATION=${PLAYGROUND_ORIGIN:?Set PLAYGROUND_ORIGIN, e.g. https://test-arcade.xaya.io}/chain GSP_PROXY_DESTINATION=${PLAYGROUND_ORIGIN:?Set PLAYGROUND_ORIGIN, e.g. https://test-arcade.xaya.io}/gsp NEXT_PUBLIC_POLYGON_RPC=/chain NEXT_PUBLIC_DEV_WALLET=1 next dev --turbopack -p 3001",
+    "build": "next build",
+    "build:export": "./scripts/build-export.sh",
+    "start": "next start -p 3001",
+    "test": "vitest run",
+    "sdk:freshness": "./scripts/sdk-freshness.sh --strict",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "typecheck:test": "tsc -p tsconfig.vitest.json --noEmit",
+    "verify:css": "node scripts/check-sdk-css.mjs",
+    "vendor:sdk": "scripts/vendor-sdk.sh",
+    "vendor:skills": "./scripts/vendor-skills.sh",
+    "test:native": "bash scripts/test-native.sh"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
+    "@tanstack/react-query": "^5.90.20",
+    "@wagmi/core": "^3.6.1",
+    "@xayaarcade/sdk": "file:vendor/xayaarcade-sdk-0.20.5.tgz",
+    "connectkit": "^1.9.1",
+    "next": "^16.3.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "viem": "^2.45.1",
+    "wagmi": "^3.4.2"
+  },
+  "devDependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.2.1",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "ethers": "^6.17.0",
+    "jsdom": "^29.1.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
+  }
+}

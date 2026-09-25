@@ -1,0 +1,66 @@
+# Penalty Pulse frontend. Built from the REPO ROOT (the lockfile lives there and the SDK is a
+# file: tarball under vendor/):
+#
+#   BUILDX_NO_DEFAULT_ATTESTATIONS=1 docker build -f docker/Dockerfile.frontend -t <tag> .
+#
+# NEXT_PUBLIC_* are baked into the JS bundle at BUILD time - this image is per-deployment,
+# not per-run. The platform's compose consumes it as FRONTEND_IMAGE.
+
+FROM node:20-alpine AS build
+WORKDIR /app
+
+# Deps first, for layer caching. The vendored SDK tarball must be present BEFORE npm ci,
+# because package-lock.json resolves it by file: path.
+COPY package.json package-lock.json .npmrc ./
+COPY vendor/ vendor/
+RUN npm ci --legacy-peer-deps
+
+COPY src/ src/
+COPY public/ public/
+COPY scripts/ scripts/
+COPY blob/rules.wasm blob/rules.wasm.sha256 blob/
+COPY next.config.ts tsconfig.json postcss.config.mjs next-env.d.ts ./
+
+# ── Build args → env (NEXT_PUBLIC_* are inlined into the bundle) ──────────────
+# The Xaya `g/` move namespace this deployment plays. MUST equal the GSP's --game_id.
+ARG NEXT_PUBLIC_GAME_ID=svpenaltypulse
+# Blank (default) → the runtime resilient RPC pair. Set an explicit URL only for a fork-testing
+# deployment (which uses /chain).
+ARG NEXT_PUBLIC_POLYGON_RPC=
+# Optional WalletConnect (mobile/QR) project id. Injected wallets work without it.
+ARG NEXT_PUBLIC_WC_PROJECT_ID=
+# "1" bakes in the test-wallet buttons (fork and playground deployments only). Empty for a
+# real-money deployment - fully inert.
+ARG NEXT_PUBLIC_DEV_WALLET=
+# The Arcade shell origin allowed to embed + message this game. Empty (default) = standalone.
+# MUST agree with FRAME_ANCESTORS (one is the client messaging allowlist, the other the server
+# framing gate).
+ARG NEXT_PUBLIC_ARCADE_ORIGIN=
+# Rewrite destinations, baked into the routes manifest at build time.
+ARG WS_PROXY_DESTINATION=http://arcade-relay:8081/
+ARG CHAIN_PROXY_DESTINATION=
+ARG GSP_PROXY_DESTINATION=
+
+ENV NEXT_PUBLIC_GAME_ID=$NEXT_PUBLIC_GAME_ID \
+    NEXT_PUBLIC_POLYGON_RPC=$NEXT_PUBLIC_POLYGON_RPC \
+    NEXT_PUBLIC_WC_PROJECT_ID=$NEXT_PUBLIC_WC_PROJECT_ID \
+    NEXT_PUBLIC_DEV_WALLET=$NEXT_PUBLIC_DEV_WALLET \
+    NEXT_PUBLIC_ARCADE_ORIGIN=$NEXT_PUBLIC_ARCADE_ORIGIN \
+    WS_PROXY_DESTINATION=$WS_PROXY_DESTINATION \
+    CHAIN_PROXY_DESTINATION=$CHAIN_PROXY_DESTINATION \
+    GSP_PROXY_DESTINATION=$GSP_PROXY_DESTINATION
+
+RUN npm run build && node scripts/check-sdk-css.mjs
+
+# ── Minimal runtime ───────────────────────────────────────────────────────────
+FROM node:20-alpine
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+WORKDIR /app
+ENV NODE_ENV=production
+# FRAME_ANCESTORS is read at RUNTIME by the middleware - set it on the container.
+COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=build --chown=nextjs:nodejs /app/public ./public
+USER nextjs
+EXPOSE 3000
+CMD ["node", "server.js"]

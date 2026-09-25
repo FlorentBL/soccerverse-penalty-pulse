@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.14)
+project(penalty_pulse_rules CXX)
+set(CMAKE_CXX_STANDARD 17)
+add_library(pulse_rules STATIC pulse/game.cpp pulse/sha.cpp)
+target_include_directories(pulse_rules PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(pulse_core_test ${CMAKE_CURRENT_SOURCE_DIR}/../tests/native/core_test.cpp)
+target_link_libraries(pulse_core_test PRIVATE pulse_rules)

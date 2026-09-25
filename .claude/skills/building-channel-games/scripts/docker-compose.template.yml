@@ -1,0 +1,152 @@
+# TEMPLATE - copy into your game repo and adapt. No secrets/paths baked in.
+#
+# GAMENAME game-channel stack - single-game deploy template.
+# 4 services on ONE compose network: XayaX bridge + GSP + relay + frontend.
+#
+#   cp docker-compose.template.yml docker/docker-compose.yml
+#   cp env.template docker/.env   # then edit
+#   cd docker && docker compose up -d --build
+#
+# ⚠️  SHARED-HOST SAFETY: the network below pins an explicit subnet. NEVER let
+#     Docker auto-pick one on a shared host - it has been observed grabbing
+#     ranges that shadow LAN routes and lock operators out remotely. Before
+#     first use, check for collisions:
+#       docker network ls
+#       docker network inspect <name> -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
+#     If 172.29.0.0/24 collides with something you already run, change the
+#     subnet below.
+
+name: GAMENAME
+
+services:
+  # ── XayaX: Polygon <-> Xaya bridge ──────────────────────────────────────────
+  # Indexes Polygon and speaks Xaya RPC (protocol 2) + ZMQ to the GSP. Separate
+  # public project: github.com/xaya/xayax - we only run its published image.
+  # On a MULTI-GAME host, run ONE shared XayaX instead of one per game.
+  #
+  # ⚠️  Flags are XayaX-version-dependent - verify against your image / the
+  #     xayax repo before relying on any flag not listed here.
+  xayax:
+    image: ${XAYAX_IMAGE:-xaya/xayax}
+    container_name: xayax
+    restart: unless-stopped
+    networks: [GAMENAME-net]
+    command:
+      - "eth"
+      - "--eth_rpc_url=${POLYGON_RPC}"
+      - "--accounts_contract=0x8C12253F71091b9582908C8a44F78870Ec6F304F"  # XayaAccounts, Polygon mainnet
+      - "--port=8000"
+      - "--listen_locally=false"
+      - "--zmq_address=tcp://0.0.0.0:28555"
+      - "--logtostderr"
+    volumes:
+      - xayax-data:/xayax
+
+  # ── GSP: the on-chain referee (per-game) ────────────────────────────────────
+  # libxayagame daemon watching game id ${GAME_ID}. Built from this repo.
+  gsp:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.<gamename>d   # rename to your GSP's Dockerfile
+    image: GAMENAME-gsp:latest
+    container_name: GAMENAME-gsp
+    restart: unless-stopped
+    depends_on: [xayax]
+    networks: [GAMENAME-net]
+    ports:
+      - "127.0.0.1:8600:8600"   # GSP RPC, loopback only
+    volumes:
+      - GAMENAME-data:/xayagame
+      - GAMENAME-logs:/log
+    command:
+      - "--xaya_rpc_url=http://xayax:8000"
+      - "--xaya_rpc_protocol=2"
+      - "--game_rpc_port=8600"
+      - "--game_rpc_listen_locally=false"
+      - "--datadir=/xayagame"
+      - "--enable_pruning=1000"
+      - "--xaya_zmq_staleness_ms=30000"
+      # Game id / move namespace. Set GAME_ID in .env for an isolated game (e.g.
+      # a wager beta). MUST match the wager contract's game namespace and the
+      # frontend's NEXT_PUBLIC_GAME_ID.
+      - "--game_id=${GAME_ID}"
+      # WAGERING ONLY (leave empty for free-play): seed the payment queue with
+      # the operator/house wallet, ONCE, on a FRESH datadir. See WAGERING.md.
+      - "--bootstrap_queue_address=${BOOTSTRAP_QUEUE_ADDRESS:-}"
+      - "--bootstrap_queue_tiers=${BOOTSTRAP_QUEUE_TIERS:-}"
+      # REQUIRED on a fresh datadir: a Polygon height just below the chain
+      # head, else the GSP never catches up. See STANDALONE.md §10 "The
+      # four-service dockerized deploy".
+      - "--polygon_start_height=${POLYGON_START_HEIGHT:?set POLYGON_START_HEIGHT in .env (approx current Polygon head minus 100)}"
+
+  # ── Relay: universal channel WebSocket relay (shared, separate component) ───
+  # NOT built from this repo - separate repo github.com/xaya/xaya-relay, private
+  # during the curated phase and access-on-request (see EXAMPLES.md). Once you
+  # have it: clone, then `docker build -t xaya-relay .`. Run ONE relay per game:
+  # each instance polls a single GSP_URL for state broadcast.
+  relay:
+    image: ${RELAY_IMAGE:-xaya-relay}
+    container_name: GAMENAME-relay
+    restart: unless-stopped
+    depends_on: [gsp]
+    networks: [GAMENAME-net]
+    ports:
+      - "127.0.0.1:8081:8081"   # the frontend rewrites /ws -> http://GAMENAME-relay:8081/
+    environment:
+      - RELAY_PORT=8081
+      - PORT=8081
+      - RELAY_AUTH=true
+      # Must match the client's NEXT_PUBLIC_RELAY_AUDIENCE exactly. Current
+      # xaya/xaya-relay REQUIRES this - with RELAY_AUTH=true and no audience
+      # set the server exits at startup - and it signs/recovers
+      # "Xaya Relay Auth\nAudience: ...\nChannel: ...\nTimestamp: ..."
+      # (xaya-relay/src/auth.ts). Client and server must sign/recover the
+      # EXACT same string, byte for byte, or every join is rejected.
+      - RELAY_AUTH_AUDIENCE=${RELAY_AUDIENCE:-GAMENAME-relay-v1}
+      - GSP_URL=http://GAMENAME-gsp:8600
+      - NODE_ENV=production
+
+  # ── Frontend: the website (per-game) ────────────────────────────────────────
+  # NEXT_PUBLIC_* are baked at BUILD time - changing them requires a rebuild,
+  # not a restart.
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_POLYGON_RPC: ${NEXT_PUBLIC_POLYGON_RPC}
+        NEXT_PUBLIC_WC_PROJECT_ID: ${NEXT_PUBLIC_WC_PROJECT_ID:-}
+        # Relay auth audience - MUST come from the SAME RELAY_AUDIENCE as the
+        # relay service above, or client-signed auth tokens won't match and
+        # every channel join is rejected. ⚠️ Your Dockerfile.frontend must
+        # DECLARE `ARG NEXT_PUBLIC_RELAY_AUDIENCE` (+ matching ENV): Docker
+        # silently ignores undeclared build args, and the client then falls
+        # back to its built-in default audience.
+        NEXT_PUBLIC_RELAY_AUDIENCE: ${RELAY_AUDIENCE:-GAMENAME-relay-v1}
+        # Must match the GSP's GAME_ID above.
+        NEXT_PUBLIC_GAME_ID: ${NEXT_PUBLIC_GAME_ID}
+        # Deployed wager contract address; empty (default) disables wager UI.
+        # ⚠️ NEXT_PUBLIC_* are read by LITERAL name at build time - this arg's
+        # name must exactly match what your frontend code reads (e.g. Xayaman
+        # reads NEXT_PUBLIC_XAYAMAN_WAGER_ADDRESS), and Dockerfile.frontend
+        # must declare the same ARG/ENV, or the wager UI silently stays off.
+        NEXT_PUBLIC_WAGER_ADDRESS: ${NEXT_PUBLIC_WAGER_ADDRESS:-}
+    image: GAMENAME-frontend:latest
+    container_name: GAMENAME-frontend
+    restart: unless-stopped
+    depends_on: [relay, gsp]
+    networks: [GAMENAME-net]
+    ports:
+      - "${FRONTEND_PORT:-8109}:3000"
+
+networks:
+  GAMENAME-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24   # PLACEHOLDER - check for collisions before use, see header note
+
+volumes:
+  xayax-data:
+  GAMENAME-data:
+  GAMENAME-logs:

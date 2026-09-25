@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@source "../../node_modules/@xayaarcade/sdk/dist";
+@source not "../../scripts";
+:root { --arcade-bg:#081a19; color-scheme:dark; }
+html,body { width:100%; height:100%; height:100dvh; margin:0; overflow:hidden; overscroll-behavior:contain; background:var(--arcade-bg); color:#f7f9ee; }
+* { box-sizing:border-box; }
+.pulse-app-shell { width:100%; height:100%; position:relative; }
+.pulse-language { position:absolute; z-index:50; top:max(7px,env(safe-area-inset-top)); right:max(7px,env(safe-area-inset-right)); display:flex; align-items:center; gap:6px; padding:4px 7px; border:1px solid #93ba99; border-radius:8px; background:#0c3029f0; box-shadow:0 5px 19px #0007; font-size:10px; font-weight:800; color:#ecffec; }
+.pulse-language select { background:#1e5740; color:white; border:0; border-radius:5px; padding:4px 6px; font:inherit; }
+.pulse-language select:focus-visible { outline:2px solid #e6ce78; }
+@media(max-width:500px){ .pulse-language label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); } }
+.pulse-app-shell > div:has(> h1) { position:relative; isolation:isolate; overflow:hidden; background:radial-gradient(circle at 50% 25%,#215c40 0,#0e352d 35%,#061b18 75%); }
+.pulse-app-shell > div:has(> h1)::before { content:""; position:absolute; z-index:-1; width:min(80vw,640px); aspect-ratio:1; top:50%; left:50%; transform:translate(-50%,-48%); border:1px solid #bdd99147; border-radius:50%; box-shadow:0 0 0 36px #7aaf7240,0 0 0 72px #7aaf7229,0 0 0 108px #7aaf7215; }
+.pulse-app-shell > div:has(> h1) > h1 { color:#f8f7e9; font-style:italic; font-weight:1000; letter-spacing:-.06em; text-transform:uppercase; text-shadow:0 7px 25px #02120e8c; }
+.pulse-app-shell > div:has(> h1) > button { color:#153025!important; background:linear-gradient(135deg,#f2da88,#cfaa48)!important; border:1px solid #ffeba4; box-shadow:0 15px 35px #020f0980!important; font-weight:900; }
+.pulse-app-shell > div:has(> h1) > p { color:#d0e4d3; }

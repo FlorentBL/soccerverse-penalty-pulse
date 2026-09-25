@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# build
+dist/
+build/
+blob/tests/.build/
+rules/.build/
+
+# the containerised blob rebuild scratch dir (check-blob.sh --rebuild)
+blob/.rebuild/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# secrets (belt and braces; real keys live outside the repo)
+*.pem
+*.key
+secrets/
+.secrets/
+
+# editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
