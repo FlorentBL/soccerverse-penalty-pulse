@@ -8,9 +8,9 @@
 | Config suffix | none (`null` in submission JSON; no bytes) |
 | Full cfg delivered to `arcade_initial_state` | 0 bytes |
 | Rules blob | `blob/rules.wasm` |
-| Rules SHA-256 | `8fc60bb14f387220561c44143d9c547106b8dfa582bbd1be35068fbb2e4cce40` |
-| State encoding | version 5, fixed 127 bytes; see `rules/pulse/game.cpp` and `src/lib/pulse/codec.ts` |
-| Turns | Five signed moves per penalty: attacker chooses one of three fixed `FC` shooters, defender chooses one of three fixed `GK` keepers, defender commits a hidden dive, attacker shoots, defender reveals; at most 6 regulation kicks, early finish and paired sudden death, up to 254 total kicks |
+| Rules SHA-256 | `410d98a85606fcc85c5b3213b08850424435a9f7eac2fbe8c13cc098713993b3` |
+| State encoding | version 6, fixed 159 bytes; see `rules/pulse/game.cpp` and `src/lib/pulse/codec.ts` |
+| Turns | Five signed moves per penalty: attacker chooses one of five fixed `FC` shooters, defender chooses one of five fixed `GK` keepers, defender commits a hidden dive, attacker shoots, defender reveals; at most 10 regulation kicks, early finish and paired sudden death, up to 254 total kicks |
 | Timeout | active seat forfeits; opponent wins |
 
 The empty cfg is intentional. The initial one-seat placeholder has no turn. The two-seat opening starts with seat 0 choosing a shooter. The game's `initial` function rejects nonempty cfg bytes, which protects against a mistaken nonempty registration suffix. The four registration values are external operator/attach inputs; this file records the intended values for review.

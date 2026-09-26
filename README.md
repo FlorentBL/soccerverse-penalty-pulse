@@ -1,27 +1,28 @@
 # Penalty Pulse
 
-A free, fast two-player Soccerverse penalty duel for XAYA Arcade. Each penalty has one shooter and one goalkeeper: the active attacker picks an `FC`, the defender picks a `GK`, the defender privately positions the keeper, and the attacker shoots. Then they swap roles. Each role offers exactly one 90+, one 75–89 and one 55–74 player from a fixed six-player roster. Regulation requires each rating band once per role, so even a three-zone underdog gets a turn.
+A free two-player Soccerverse penalty duel for XAYA Arcade. Each player has **five FC shooters and five GK keepers**, in five rating bands: 90+, 80–89, 70–79, 60–69 and 55–59. P1 and P2 have distinct teams. Every card can be used once per role during the five regulation penalties, so each player must eventually use their lower-rated shooter and keeper unless the match ends early.
 
 ## Rules
 
-1. Seat 0 attacks first and picks one of three fixed `FC` shooters. Seat 1 then picks one of three fixed `GK` goalkeepers. The choices are visible to both players. Arbitrary Soccerverse IDs are rejected by the WASM rules. Each seat must use the 90+, 75–89 and 55–74 bands once as attacker and once as defender during regulation. Players and bands can be reused in sudden death.
-   The roster is tracked **separately for each seat**: P1 choosing Ronaldo does not stop P2 choosing him for P2's first kick. P1 cannot choose Ronaldo again in regulation. Both players must eventually use all three shooter bands, including the 55–74 player.
-2. The defender sees exactly which of the nine numbered zones the chosen shooter can score in, then secretly places the goalkeeper. The attacker sees the scoring zones, but not the goalkeeper's position, before aiming. The goalkeeper position is committed with SHA-256 and revealed after the shot. The next penalty swaps the attacker and defender.
-3. The pinned official Soccerverse `rating_shooting` determines reliable zones: 55–59 → 3, 60–64 → 4, 65–69 → 5, 70–79 → 6, 80–89 → 7, 90–100 → 8. Ratings below 55 cannot be selected. The zone pattern rotates by player ID. An official `rating_gk` of 55–74 covers one zone. At 75–89 it covers two zones sharing a side; at 90+ it covers two zones touching by a side or corner. Two distant zones can never be covered together. The second zone is available only when the shooter has at least four reliable zones. Against a three-zone shooter every keeper covers one zone.
-4. The attacker can shoot **only at a green zone**; dark zones are disabled in the interface and rejected by the WASM judge. A shot into a covered green zone is saved; an uncovered one scores. The score, goal animation and explicit result stay visible until the player presses **Continue**.
-5. Both players receive up to three regulation penalties. The match can end early if the trailing player cannot catch up. A tie enters paired sudden death and ends when the scores differ after both have shot. A timed-out active player forfeits. At the 254-kick wire limit, a remaining tie is awarded to the first shooter.
+1. P1 chooses a shooter; P2 sees that player and chooses a goalkeeper. The defender secretly positions the goalkeeper, then the attacker aims. On the next penalty they swap roles. Only the fixed, position-verified Soccerverse players are legal.
+2. The goal has nine zones. Both players see the shooter's green scoring zones before the goalkeeper is placed. A shooter rated 55–59 has 3 zones; 60–64 has 4; 65–69 has 5; 70–79 has 6; 80–89 has 7; 90+ has 8. Dark zones cannot be selected or submitted to the WASM judge.
+3. A GK rated 55–59 covers one zone. At 60–69, a second edge-touching zone is allowed against a shooter with 8 green zones; at 70–79, against 6+ green zones; at 80–89, against 4+ green zones. A 90+ GK can cover two zones touching by an edge or corner against 4+ green zones. The keeper cannot cover separated zones. Against a three-zone shooter, every GK covers one zone.
+4. A covered shot is saved; an uncovered green-zone shot scores. The defender's committed position is revealed after the shot. The score, animation and result remain visible until **Continue**.
+5. Each side has up to five regulation shots. The game ends early when a comeback is impossible. A tie after five shots each enters paired sudden death; cards may then be reused. The active player forfeits on timeout. A tie at the 254-kick wire limit goes to P1.
 
-The six roster IDs, names, `rating_shooting`, `rating_gk` and `position_main` are pinned from official Soccerverse sources. The full source snapshot contains 179,100 players, but gameplay admits only the six in `src/lib/pulse/featured.json`. The tier limits, zone patterns and keeper coverage are **Arcade game rules**. Player ownership is not required. There are no live Soccerverse API calls during a match.
+The player names, IDs, ratings and FC/GK primary positions come from pinned official Soccerverse data (179,100 players). Zone patterns, rating bands and coverage are **Arcade rules**. Ownership is not required and no live Soccerverse call occurs during a match.
 
-| Band | FC shooter · shooting | GK keeper · goalkeeping |
+| Band | P1 FC / GK | P2 FC / GK |
 |---|---|---|
-| 90+ | Harry Kane `#184` · 97 | David Raya Martin `#19465` · 95 |
-| 75–89 | Cristiano Ronaldo `#874` · 88 | Bernd Leno `#1438` · 89 |
-| 55–74 | Mario Barwuah Balotelli `#1917` · 59 | Ethan Horvath `#62` · 74 |
+| 90+ | Kane 97 / Raya 95 | Haaland 96 / Svilar 93 |
+| 80–89 | Ronaldo 88 / Leno 89 | Messi 88 / Pickford 89 |
+| 70–79 | Solanke 79 / Ospina 79 | Muriel 79 / Letica 79 |
+| 60–69 | Quaison 64 / Whiteman 64 | Gray 64 / Donnarumma 64 |
+| 55–59 | Balotelli 59 / Oelschlägel 59 | Moses 59 / Romero 59 |
 
 ## Balance measurement
 
-Run `python3 scripts/measure-balance.py` with SciPy. Among the pinned source players, 30,715 have primary position `FC` and 19,955 are `GK`. The eligible source tiers contain 29 / 1,069 / 23,993 FC players and 16 / 692 / 15,791 GK players. From that source we fixed one player per band and role. With optimal randomized zone choices, the nine allowed shooter-versus-keeper matchups score between **66.7% and 87.5%**: Kane (97) scores 75% against Raya (95) or Leno (89), and 87.5% against Horvath (74); Ronaldo (88) scores 71.4% against Raya and 75% against Leno; Balotelli (59, three zones) scores 66.7% against all three. These are mathematical one-penalty values, not measured human win rates or full-match win rates.
+`python3 scripts/measure-balance.py` computes exact optimal mixed-strategy goal chances for every fixed shooter/keeper pairing from pinned ratings. The 50 cross-team matchups range from **50% to 87.5%**. Both teams have a 59-rated shooter with three green zones (66.7% against any goalkeeper), a 64-rated shooter with four zones, and similar higher-rating options. These are mathematical **one-shot** values, not measured human or full-match win rates. The P1 and P2 distributions are close but not identical; live two-player playtesting remains necessary.
 
 ## Play locally
 
@@ -54,4 +55,4 @@ Free play is the only requested mode. WCHI stakes are a separate future operator
 
 - [Official XAYA Arcade skills](https://arcade.xaya.io/skills), [rules blob ABI](https://arcade.xaya.io/docs/rules-blob) and [SDK docs](https://arcade.xaya.io/docs/sdk); local official examples at `~/Downloads/xaya-arcade-examples`.
 - [Soccerverse datapack](https://soccerverse.com/developers/datapack-and-assets) and [Soccerverse MCP player data](https://soccerverse.com/developers/soccerverse-mcp).
-- [IFAB penalty shootout procedure](https://www.theifab.com/laws/latest/determining-the-outcome-of-a-match/) for early decisions and equal-attempt sudden death; this game's three-kick format is shorter.
+- [IFAB penalty shootout procedure](https://www.theifab.com/laws/latest/determining-the-outcome-of-a-match/) for early decisions and equal-attempt sudden death; this game's five-kick format follows the standard shootout length.

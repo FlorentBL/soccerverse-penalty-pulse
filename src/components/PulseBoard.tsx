@@ -57,8 +57,8 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const strikerId = game?.pairShooters[shooterSeat] || 0;
   const keeperId = game?.pairKeepers[1 - shooterSeat] || 0;
   const reachNeeded = strikerId > 0 && keeperId > 0 && canReach(keeperId, strikerId);
-  const usedShooters = game && game.kick < 6 ? game.usedShooters[localPlayerIndex] : [];
-  const usedKeepers = game && game.kick < 6 ? game.usedKeepers[localPlayerIndex] : [];
+  const usedShooters = game && game.kick < 10 ? game.usedShooters[localPlayerIndex] : [];
+  const usedKeepers = game && game.kick < 10 ? game.usedKeepers[localPlayerIndex] : [];
 
   useEffect(() => {
     setGuard(null); setReach(null); setLockedGuard(null); setAim(null);
@@ -136,7 +136,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
     if (replay) return;
     const reject = (message: string) => { setError(message); };
     if (shootingRating(id) === null || goalkeeperRating(id) === null) { reject(t.playerMissing); return; }
-    if (role === 'shoot' ? !isRosterShooter(id) : !isRosterKeeper(id)) {
+    if (role === 'shoot' ? !isRosterShooter(id, localPlayerIndex) : !isRosterKeeper(id, localPlayerIndex)) {
       reject(t.playerMissing); return;
     }
     const rating = role === 'shoot' ? shootingRating(id) : goalkeeperRating(id);
@@ -189,12 +189,12 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
     const scorer = (replay.kick - 1) % 2;
     shownGoals[scorer] = Math.max(0, shownGoals[scorer] - 1);
   }
-  const extra = shownKick >= 6;
-  const progress = extra ? shownKick - 6 : shownKick;
-  const progressTotal = extra ? 2 : 6;
+  const extra = shownKick >= 10;
+  const progress = extra ? shownKick - 10 : shownKick;
+  const progressTotal = extra ? 2 : 10;
   const progressDone = extra ? finished && !replay && progress % 2 === 0 ? 2 : progress % 2 : progress;
   const extraRound = Math.floor(progress / 2) + (finished && !replay && progress % 2 === 0 && progress > 0 ? 0 : 1);
-  const regulationKick = finished && !replay ? Math.max(1, Math.min(shownKick, 6)) : Math.min(shownKick + 1, 6);
+  const regulationKick = finished && !replay ? Math.max(1, Math.min(shownKick, 10)) : Math.min(shownKick + 1, 10);
 
   return <main ref={rootRef} className={'pulse-root' + (replay ? ' pulse-replaying' : '') + (resolvingKick ? ' pulse-resolving' : '') + (resultAckKick === game?.kick ? ' pulse-result-open' : '')}>
     <header className="pulse-top">
@@ -204,7 +204,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
     </header>
     <div className="pulse-score">
       <div className={'pulse-score-side ' + (!preview && localPlayerIndex === 0 ? 'mine' : '') + (preview && localPlayerIndex === 0 && !finished && !replay && !showOutcome ? ' pulse-score-active' : '')}><small>{preview ? 'P1' : localPlayerIndex === 0 ? t.you : t.rival}</small><strong>{shownGoals[0]}</strong></div>
-      <div className="pulse-round"><span>{extra ? t.suddenDeath : t.round + ' ' + regulationKick} <em>{extra ? t.extraRound + ' ' + extraRound : t.of + ' 6'}</em></span>
+      <div className="pulse-round"><span>{extra ? t.suddenDeath : t.round + ' ' + regulationKick} <em>{extra ? t.extraRound + ' ' + extraRound : t.of + ' 10'}</em></span>
         <div className="pulse-dots">{Array.from({ length: progressTotal }, (_, i) => <i key={i} className={i < progressDone ? 'done' : !finished && i === progressDone ? 'current' : ''} />)}</div>
         <button type="button" className="pulse-rules-trigger" onClick={() => setRulesOpen(true)}>{rulesCopy[locale].button} <span aria-hidden="true">↗</span></button>
       </div>
@@ -280,12 +280,12 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
           return <section className="pulse-roster" key={role} aria-label={isShooter ? t.striker : t.keeper}>
             <div className="pulse-roster-head"><div><span>{isShooter ? '01' : '02'}</span><strong>{isShooter ? t.striker + ' · FC' : t.keeper + ' · GK'}</strong></div>
               <small>{selectedName}</small></div>
-            <div className="pulse-roster-cards">{featuredPlayers.filter(p => p.role === role).map(p => {
+            <div className="pulse-roster-cards">{featuredPlayers.filter(p => p.role === role && p.seat === localPlayerIndex).map(p => {
               const rating = isShooter ? shootingRating(p.id) : goalkeeperRating(p.id);
               const used = tierUsed(usedIds, p.id, isShooter ? 'shoot' : 'save');
               return <button type="button" key={p.id} disabled={!!replay || used || p.id === (isShooter ? selectedKeeper : selectedShooter)}
                 className={selected === p.id ? 'active' : ''} onClick={() => selectPlayer(p.id, isShooter ? 'shoot' : 'save')}>
-                <span className="pulse-card-band">{['90+', '75–89', '55–74'][ratingTier(rating)]}</span>
+                <span className="pulse-card-band">{['90+', '80–89', '70–79', '60–69', '55–59'][ratingTier(rating)]}</span>
                 <strong>{p.name}</strong><b>{rating}</b>{used && <em>{t.tierSpent}</em>}
               </button>;
             })}</div>

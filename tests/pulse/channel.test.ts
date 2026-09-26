@@ -28,8 +28,8 @@ describe('sequential selection and goalkeeper commitment', () => {
     defender.setPlayerIndex(1);
     defender.setPendingInput({ type: 'keeper', kick: 0, playerId: 22221 });
     expect(await defender.maybeAutoMove(state(afterShooter, 1))).toBeNull();
-    defender.setPendingInput({ type: 'keeper', kick: 0, playerId: 1438 });
-    expect(await defender.maybeAutoMove(state(afterShooter, 1))).toEqual(Uint8Array.of(5, 158, 5, 0, 0));
+    defender.setPendingInput({ type: 'keeper', kick: 0, playerId: 556 });
+    expect(await defender.maybeAutoMove(state(afterShooter, 1))).toEqual(Uint8Array.of(5, 44, 2, 0, 0));
   });
   it('persists the hidden dive and reveals the original lanes after a retry', async () => {
     vi.stubGlobal('crypto', webcrypto);

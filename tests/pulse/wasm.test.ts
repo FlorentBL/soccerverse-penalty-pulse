@@ -30,13 +30,13 @@ async function judge(): Promise<Judge> {
 }
 function call(api: Judge, kind: 'initial' | 'apply' | 'timeout', arg: number, input: Uint8Array = new Uint8Array(), seat = 0): Uint8Array | null {
   const p = api.arcade_alloc(input.length);
-  const out = api.arcade_alloc(127);
+  const out = api.arcade_alloc(159);
   new Uint8Array(api.memory.buffer).set(input, p);
-  const n = kind === 'initial' ? api.arcade_initial_state(arg, p, input.length, out, 127) :
-    kind === 'apply' ? api.arcade_apply_move(arg, p, input.length, out, 127) :
-      api.arcade_resolve_timeout(arg, seat, out, 127);
+  const n = kind === 'initial' ? api.arcade_initial_state(arg, p, input.length, out, 159) :
+    kind === 'apply' ? api.arcade_apply_move(arg, p, input.length, out, 159) :
+      api.arcade_resolve_timeout(arg, seat, out, 159);
   const value = n < 0 ? null : new Uint8Array(new Uint8Array(api.memory.buffer).slice(out, out + n));
-  api.arcade_free(p, input.length); api.arcade_free(out, 127);
+  api.arcade_free(p, input.length); api.arcade_free(out, 159);
   return value;
 }
 function parse(api: Judge, state: Uint8Array, seats = 2): number {
@@ -61,7 +61,7 @@ describe('Penalty Pulse WASM judge', () => {
       expect(lines.shift()).toBe('mode ' + mode);
       let state: Uint8Array = call(api, 'initial', 2)!;
       expect(hex(state)).toBe(lines.shift());
-      for (let i = 0; i < (mode === 0 ? 20 : 40); ++i) {
+      for (let i = 0; i < (mode === 0 ? 30 : 60); ++i) {
         const [moveHex, stateHex] = lines.shift()!.split(' ');
         const h = parse(api, state);
         expect(h).toBeGreaterThan(0);
@@ -70,14 +70,14 @@ describe('Penalty Pulse WASM judge', () => {
         api.arcade_release(h);
         expect(hex(state)).toBe(stateHex);
       }
-      expect(decodeState(state, 2)).toMatchObject({ phase: 6, winner: 0, kick: mode === 0 ? 4 : 8 });
+      expect(decodeState(state, 2)).toMatchObject({ phase: 6, winner: 0, kick: mode === 0 ? 6 : 12 });
     }
   });
   it('rejects malformed config, states, moves and resolves a timeout', async () => {
     const api = await judge();
     expect(call(api, 'initial', 2, Uint8Array.of(1))).toBeNull();
     const state = call(api, 'initial', 2)!;
-    expect(parse(api, state.slice(0, 126))).toBe(0);
+    expect(parse(api, state.slice(0, 158))).toBe(0);
     const forged = state.slice(); forged[4] = 99;
     const bad = parse(api, forged);
     expect(bad).toBeGreaterThan(0); expect(api.arcade_is_valid(bad)).toBe(0); api.arcade_release(bad);
@@ -93,8 +93,8 @@ describe('Penalty Pulse WASM judge', () => {
     const initial = call(api, 'initial', 2)!;
     const afterShooter = apply(api, initial, encodeShooter(184))!;
     expect(decodeState(afterShooter, 2)).toMatchObject({ phase: 1, turn: 1, pairShooters: [184, 0] });
-    const afterKeeper = apply(api, afterShooter, encodeKeeper(19465))!;
-    expect(decodeState(afterKeeper, 2)).toMatchObject({ phase: 2, turn: 1, pairKeepers: [0, 19465] });
+    const afterKeeper = apply(api, afterShooter, encodeKeeper(556))!;
+    expect(decodeState(afterKeeper, 2)).toMatchObject({ phase: 2, turn: 1, pairKeepers: [0, 556] });
     const target = scoringTargets(184)[0];
     const primary = target % 3 < 2 ? target + 1 : target - 1;
     const afterCommit = apply(api, afterKeeper, await encodeCommit(0, primary, target, salt))!;
@@ -105,7 +105,7 @@ describe('Penalty Pulse WASM judge', () => {
     expect(decodeState(afterShot, 2)).toMatchObject({ phase: 4, turn: 1, lastResult: 0 });
     const caught = apply(api, afterShot, encodeReveal(primary, target, salt))!;
     expect(decodeState(caught, 2)).toMatchObject({ phase: 0, kick: 1, turn: 1, lastResult: 2,
-      lastReach: target, lastPlayer: 184, lastKeeper: 19465, pairShooters: [0, 0], pairKeepers: [0, 0] });
+      lastReach: target, lastPlayer: 184, lastKeeper: 556, pairShooters: [0, 0], pairKeepers: [0, 0] });
     const badCommit = apply(api, afterKeeper, await encodeCommit(0, 6, 8, salt))!;
     const badShot = apply(api, badCommit, encodeShot(target))!;
     expect(apply(api, badShot, encodeReveal(6, 8, salt))).toBeNull();
@@ -116,6 +116,6 @@ describe('Penalty Pulse WASM judge', () => {
     for (const id of [159, 1460, 1100]) expect(apply(api, initial, encodeShooter(id))).toBeNull();
     const afterShooter = apply(api, initial, encodeShooter(184))!;
     for (const id of [184, 159, 22221]) expect(apply(api, afterShooter, encodeKeeper(id))).toBeNull();
-    expect(apply(api, afterShooter, encodeKeeper(1438))).not.toBeNull();
+    expect(apply(api, afterShooter, encodeKeeper(2932))).not.toBeNull();
   });
 });

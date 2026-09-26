@@ -1,11 +1,11 @@
 import featured from './featured.json';
 
 export const featuredPlayers = featured;
-export function isRosterShooter(id: number): boolean {
-  return featuredPlayers.some(player => player.role === 'striker' && player.id === id);
+export function isRosterShooter(id: number, seat: number): boolean {
+  return featuredPlayers.some(player => player.role === 'striker' && player.seat === seat && player.id === id);
 }
-export function isRosterKeeper(id: number): boolean {
-  return featuredPlayers.some(player => player.role === 'keeper' && player.id === id);
+export function isRosterKeeper(id: number, seat: number): boolean {
+  return featuredPlayers.some(player => player.role === 'keeper' && player.seat === seat && player.id === id);
 }
 const cache = new Map<number, Record<string, string>>();
 export async function findPlayerName(id: number): Promise<string | null> {

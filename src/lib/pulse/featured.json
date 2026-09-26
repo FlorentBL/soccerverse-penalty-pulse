@@ -1,8 +1,22 @@
 [
-  {"id": 184, "name": "Harry Kane", "role": "striker"},
-  {"id": 874, "name": "Cristiano Ronaldo", "role": "striker"},
-  {"id": 1917, "name": "Mario Barwuah Balotelli", "role": "striker"},
-  {"id": 19465, "name": "David Raya Martin", "role": "keeper"},
-  {"id": 1438, "name": "Bernd Leno", "role": "keeper"},
-  {"id": 62, "name": "Ethan Horvath", "role": "keeper"}
+  {"id":184,"name":"Harry Kane","role":"striker","seat":0},
+  {"id":874,"name":"Cristiano Ronaldo","role":"striker","seat":0},
+  {"id":18883,"name":"Dominic Solanke-Mitchell","role":"striker","seat":0},
+  {"id":2866,"name":"Robin Quaison","role":"striker","seat":0},
+  {"id":1917,"name":"Mario Barwuah Balotelli","role":"striker","seat":0},
+  {"id":19465,"name":"David Raya Martin","role":"keeper","seat":0},
+  {"id":1438,"name":"Bernd Leno","role":"keeper","seat":0},
+  {"id":313,"name":"David Ospina Ramírez","role":"keeper","seat":0},
+  {"id":161,"name":"Alfie Whiteman","role":"keeper","seat":0},
+  {"id":3,"name":"Eric Dirk Oelschlägel","role":"keeper","seat":0},
+  {"id":1100,"name":"Erling Braut Haaland","role":"striker","seat":1},
+  {"id":154,"name":"Lionel Messi","role":"striker","seat":1},
+  {"id":2493,"name":"Luis Muriel Fruto","role":"striker","seat":1},
+  {"id":18810,"name":"Andre Gray","role":"striker","seat":1},
+  {"id":1347,"name":"Victor Moses","role":"striker","seat":1},
+  {"id":556,"name":"Mile Svilar","role":"keeper","seat":1},
+  {"id":2932,"name":"Jordan Pickford","role":"keeper","seat":1},
+  {"id":64,"name":"Karlo Letica","role":"keeper","seat":1},
+  {"id":1621,"name":"Antonio Donnarumma","role":"keeper","seat":1},
+  {"id":884,"name":"Sergio Romero","role":"keeper","seat":1}
 ]

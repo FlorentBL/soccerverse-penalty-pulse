@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { canReach, goalkeeperRating, isCentreForward, isGoalkeeper, ratingTier, scoringTargets, shootingRating, validReach, type PulseState } from '@/lib/pulse/codec';
 import { advancePreview, initialPreviewState, type PreviewGuard } from '@/lib/pulse/dev-preview';
 
-const shooters = [[184, 874, 1917], [874, 1917, 184]];
-const keepers = [[19465, 1438, 62], [1438, 62, 19465]];
+const shooters = [[184, 874, 18883, 2866, 1917], [1100, 154, 2493, 18810, 1347]];
+const keepers = [[19465, 1438, 313, 161, 3], [556, 2932, 64, 1621, 884]];
 function select(state: PulseState): PulseState {
   const seat = state.kick % 2;
-  const round = state.kick < 6 ? Math.floor(state.kick / 2) : 0;
+  const round = state.kick < 10 ? Math.floor(state.kick / 2) : 0;
   const one = advancePreview(state, { type: 'shooter', kick: state.kick, playerId: shooters[seat][round] }, null);
   expect(one?.state.phase).toBe(1);
   expect(one?.state.turn).toBe(1 - seat);
@@ -34,34 +34,32 @@ describe('wallet-free local preview', () => {
   it('alternates shooter and goalkeeper roles on every penalty', () => {
     let state = select(initialPreviewState());
     expect(state.pairShooters).toEqual([184, 0]);
-    expect(state.pairKeepers).toEqual([0, 1438]);
+    expect(state.pairKeepers).toEqual([0, 556]);
     state = kick(state, true);
     expect(state).toMatchObject({ phase: 0, turn: 1, kick: 1, goals: [1, 0] });
     state = select(state);
-    expect(state.pairShooters).toEqual([0, 874]);
+    expect(state.pairShooters).toEqual([0, 1100]);
     expect(state.pairKeepers).toEqual([19465, 0]);
     state = kick(state, false);
     expect(state).toMatchObject({ phase: 0, turn: 0, kick: 2, goals: [1, 0], turnCount: 10 });
   });
-  it('lets P2 choose Ronaldo after P1 used him, then blocks P1 from reusing that band', () => {
-    const p1 = advancePreview(initialPreviewState(), { type: 'shooter', kick: 0, playerId: 874 }, null)!;
-    const p2Keeper = advancePreview(p1.state, { type: 'keeper', kick: 0, playerId: 62 }, null)!;
-    const afterP1 = kick(p2Keeper.state, true);
-    const p2 = advancePreview(afterP1, { type: 'shooter', kick: 1, playerId: 874 }, null);
-    expect(p2?.state.usedShooters).toEqual([[874, 0, 0], [874, 0, 0]]);
-    const p1Keeper = advancePreview(p2!.state, { type: 'keeper', kick: 1, playerId: 19465 }, null)!;
-    const afterP2 = kick(p1Keeper.state, false);
-    expect(advancePreview(afterP2, { type: 'shooter', kick: 2, playerId: 874 }, null)).toBeNull();
+  it('uses distinct seat rosters and never repeats a card in regulation', () => {
+    const state = initialPreviewState();
+    expect(advancePreview(state, { type: 'shooter', kick: 0, playerId: 1100 }, null)).toBeNull();
+    const p1 = advancePreview(state, { type: 'shooter', kick: 0, playerId: 874 }, null)!;
+    expect(advancePreview(p1.state, { type: 'keeper', kick: 0, playerId: 19465 }, null)).toBeNull();
+    const after = kick(advancePreview(p1.state, { type: 'keeper', kick: 0, playerId: 556 }, null)!.state, false);
+    expect(advancePreview(after, { type: 'shooter', kick: 1, playerId: 874 }, null)).toBeNull();
   });
-  it('ends early after two unanswered goals', () => {
+  it('ends early after three unanswered goals', () => {
     let state = initialPreviewState();
-    for (let kickNo = 0; kickNo < 4; kickNo++) state = kick(select(state), kickNo % 2 === 0);
-    expect(state).toMatchObject({ phase: 6, kick: 4, goals: [2, 0], winner: 0, turnCount: 20 });
+    for (let k = 0; k < 6; k++) state = kick(select(state), k % 2 === 0);
+    expect(state).toMatchObject({ phase: 6, kick: 6, goals: [3, 0], winner: 0, turnCount: 30 });
   });
-  it('plays sudden death after a tie and permits tier reuse', () => {
+  it('plays sudden death after five shots each and permits reuse', () => {
     let state = initialPreviewState();
-    for (let k = 0; k < 8; k++) state = kick(select(state), k === 6);
-    expect(state).toMatchObject({ phase: 6, kick: 8, goals: [1, 0], winner: 0 });
+    for (let k = 0; k < 12; k++) state = kick(select(state), k === 10);
+    expect(state).toMatchObject({ phase: 6, kick: 12, goals: [1, 0], winner: 0 });
   });
   it('uses official ratings and touching goalkeeper coverage', () => {
     const state = select(initialPreviewState());
@@ -71,7 +69,7 @@ describe('wallet-free local preview', () => {
     expect(validReach(19465, 184, 0, 4)).toBe(true);
     expect(validReach(1438, 184, 0, 4)).toBe(false);
     expect(validReach(1438, 184, 0, 1)).toBe(true);
-    expect(advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 4 }, null)).toBeNull();
+    expect(advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 4 }, null)).not.toBeNull();
     const next = advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 1 }, null);
     expect(next?.keeperChoice).toEqual({ lane: 0, reach: 1 } satisfies PreviewGuard);
     expect(shootingRating(1917)).toBe(59);
@@ -79,7 +77,7 @@ describe('wallet-free local preview', () => {
     expect(scoringTargets(1917)).toHaveLength(3);
     expect(scoringTargets(874)).toHaveLength(7);
     expect(scoringTargets(184)).toHaveLength(8);
-    expect(ratingTier(shootingRating(1917))).toBe(2);
+    expect(ratingTier(shootingRating(1917))).toBe(4);
   });
   it('rejects a shot outside the green zones even when the keeper misses it', () => {
     const state = select(initialPreviewState());
@@ -106,7 +104,7 @@ describe('wallet-free local preview', () => {
       if (k === 1) {
         expect(advancePreview(state, { type: 'shooter', kick: 2, playerId: 184 }, null)).toBeNull();
         const next = advancePreview(state, { type: 'shooter', kick: 2, playerId: 874 }, null)!.state;
-        expect(advancePreview(next, { type: 'keeper', kick: 2, playerId: 1438 }, null)).toBeNull();
+        expect(advancePreview(next, { type: 'keeper', kick: 2, playerId: 19465 }, null)).toBeNull();
       }
     }
     expect(state).toMatchObject({ phase: 6, kick: 254, winner: 0, goals: [0, 0] });

@@ -28,28 +28,25 @@ export interface PulseState {
 }
 
 export function decodeState(bytes: Uint8Array, participants: number): PulseState | null {
-  if (bytes.length !== 127 || bytes[0] !== 5 || bytes[1] !== participants || bytes[2] > 6 || bytes[2] === 5) return null;
+  if (bytes.length !== 159 || bytes[0] !== 6 || bytes[1] !== participants || bytes[2] > 6 || bytes[2] === 5) return null;
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const usedShooters: [number[], number[]] = [
-    [v.getUint32(48, true), v.getUint32(52, true), v.getUint32(56, true)],
-    [v.getUint32(60, true), v.getUint32(64, true), v.getUint32(68, true)],
-  ];
-  const usedKeepers: [number[], number[]] = [
-    [v.getUint32(95, true), v.getUint32(99, true), v.getUint32(103, true)],
-    [v.getUint32(107, true), v.getUint32(111, true), v.getUint32(115, true)],
-  ];
+  const usedShooters: [number[], number[]] = [0, 1].map(seat =>
+    Array.from({ length: 5 }, (_, shot) => v.getUint32(48 + 4 * (seat * 5 + shot), true))) as [number[], number[]];
+  const usedKeepers: [number[], number[]] = [0, 1].map(seat =>
+    Array.from({ length: 5 }, (_, shot) => v.getUint32(111 + 4 * (seat * 5 + shot), true))) as [number[], number[]];
   return {
     participants, phase: bytes[2] as PulseState['phase'], turn: bytes[3], kick: bytes[4],
     goals: [bytes[5], bytes[6]], winner: v.getInt8(7), turnCount: v.getUint16(8, true),
-    pendingShooter: v.getUint32(42, true), pendingKeeper: v.getUint32(119, true), pendingLane: bytes[46], lastResult: bytes[47],
-    usedShooters, usedKeepers, lastPlayer: v.getUint32(72, true), lastKeeper: v.getUint32(123, true), lastShot: bytes[76], lastGuard: bytes[77],
-    pairShooters: [v.getUint32(78, true), v.getUint32(82, true)], pairKeepers: [v.getUint32(87, true), v.getUint32(91, true)], lastReach: bytes[86],
+    pendingShooter: v.getUint32(42, true), pendingKeeper: v.getUint32(151, true), pendingLane: bytes[46], lastResult: bytes[47],
+    usedShooters, usedKeepers, lastPlayer: v.getUint32(88, true), lastKeeper: v.getUint32(155, true), lastShot: bytes[92], lastGuard: bytes[93],
+    pairShooters: [v.getUint32(94, true), v.getUint32(98, true)], pairKeepers: [v.getUint32(103, true), v.getUint32(107, true)], lastReach: bytes[102],
   };
 }
 
 export function ratingTier(rating: number | null): number {
-  return rating !== null && rating >= 90 && rating <= 100 ? 0 : rating !== null && rating >= 75 && rating < 90 ? 1 :
-    rating !== null && rating >= 55 && rating < 75 ? 2 : -1;
+  return rating !== null && rating >= 90 && rating <= 100 ? 0 : rating !== null && rating >= 80 && rating < 90 ? 1 :
+    rating !== null && rating >= 70 && rating < 80 ? 2 : rating !== null && rating >= 60 && rating < 70 ? 3 :
+    rating !== null && rating >= 55 && rating < 60 ? 4 : -1;
 }
 export function tierUsed(ids: number[], id: number, role: 'shoot' | 'save'): boolean {
   const rating = role === 'shoot' ? shootingRating : goalkeeperRating;
@@ -70,7 +67,9 @@ export function scoringTargets(id: number): number[] {
   return Array.from({ length: scoringTargetCount(id) }, (_, i) => (start + i * step) % 9);
 }
 export function canReach(keeperId: number, shooterId: number): boolean {
-  return (goalkeeperRating(keeperId) ?? -1) >= 75 && scoringTargetCount(shooterId) >= 4;
+  const rating = goalkeeperRating(keeperId) ?? -1;
+  const targets = scoringTargetCount(shooterId);
+  return rating >= 80 ? targets >= 4 : rating >= 70 ? targets >= 6 : rating >= 60 ? targets >= 8 : false;
 }
 export function adjacent(first: number, second: number): boolean {
   return first !== second && first >= 0 && first <= 8 && second >= 0 && second <= 8 &&

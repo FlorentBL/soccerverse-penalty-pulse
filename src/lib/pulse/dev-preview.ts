@@ -8,15 +8,15 @@ export function initialPreviewState(): PulseState {
   return {
     participants: 2, phase: 0, turn: 0, kick: 0, goals: [0, 0], winner: -1,
     turnCount: 0, pendingShooter: 0, pendingKeeper: 0, pendingLane: 255, lastResult: 0,
-    usedShooters: [[0, 0, 0], [0, 0, 0]], usedKeepers: [[0, 0, 0], [0, 0, 0]],
+    usedShooters: [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]], usedKeepers: [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]],
     lastPlayer: 0, lastKeeper: 0, lastShot: 255, lastGuard: 255,
     pairShooters: [0, 0], pairKeepers: [0, 0], lastReach: 255,
   };
 }
 function scoreWinner(kick: number, goals: [number, number]): number {
-  if (kick < 6) {
-    if (goals[0] > goals[1] + 3 - Math.floor(kick / 2)) return 0;
-    if (goals[1] > goals[0] + 3 - Math.ceil(kick / 2)) return 1;
+  if (kick < 10) {
+    if (goals[0] > goals[1] + 5 - Math.floor(kick / 2)) return 0;
+    if (goals[1] > goals[0] + 5 - Math.ceil(kick / 2)) return 1;
     return -1;
   }
   if (kick % 2) return -1;
@@ -30,24 +30,24 @@ export function advancePreview(
   const shooter = state.kick % 2;
   const defender = 1 - shooter;
   if (state.phase === 0 && input.type === 'shooter') {
-    if (!Number.isInteger(input.playerId) || !isRosterShooter(input.playerId) ||
-        ratingTier(shootingRating(input.playerId)) < 0 || state.kick < 6 &&
+    if (!Number.isInteger(input.playerId) || !isRosterShooter(input.playerId, shooter) ||
+        ratingTier(shootingRating(input.playerId)) < 0 || state.kick < 10 &&
         tierUsed(state.usedShooters[shooter], input.playerId, 'shoot')) return null;
     const pairShooters: [number, number] = [...state.pairShooters];
     pairShooters[shooter] = input.playerId;
     const usedShooters: [number[], number[]] = [state.usedShooters[0].slice(), state.usedShooters[1].slice()];
-    if (state.kick < 6) usedShooters[shooter][Math.floor(state.kick / 2)] = input.playerId;
+    if (state.kick < 10) usedShooters[shooter][Math.floor(state.kick / 2)] = input.playerId;
     return { state: { ...state, phase: 1, turn: defender, pairShooters, usedShooters,
       turnCount: state.turnCount + 1 }, keeperChoice: null };
   }
   if (state.phase === 1 && input.type === 'keeper') {
-    if (!Number.isInteger(input.playerId) || !isRosterKeeper(input.playerId) ||
-        ratingTier(goalkeeperRating(input.playerId)) < 0 || state.kick < 6 &&
+    if (!Number.isInteger(input.playerId) || !isRosterKeeper(input.playerId, defender) ||
+        ratingTier(goalkeeperRating(input.playerId)) < 0 || state.kick < 10 &&
         tierUsed(state.usedKeepers[defender], input.playerId, 'save')) return null;
     const pairKeepers: [number, number] = [...state.pairKeepers];
     pairKeepers[defender] = input.playerId;
     const usedKeepers: [number[], number[]] = [state.usedKeepers[0].slice(), state.usedKeepers[1].slice()];
-    if (state.kick < 6) usedKeepers[defender][Math.floor(state.kick / 2)] = input.playerId;
+    if (state.kick < 10) usedKeepers[defender][Math.floor(state.kick / 2)] = input.playerId;
     return { state: { ...state, phase: 2, turn: defender, pairKeepers, usedKeepers,
       turnCount: state.turnCount + 1 }, keeperChoice: null };
   }

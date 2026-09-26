@@ -31,25 +31,30 @@ featured = json.loads((root / 'src/lib/pulse/featured.json').read_text())
 shooting = (root / 'data/player-shooting.bin').read_bytes()
 goalkeeping = (root / 'data/player-goalkeeping.bin').read_bytes()
 rosters = {}
+if len(featured) != 20 or len({p['id'] for p in featured}) != 20:
+    raise SystemExit('featured roster must contain 20 distinct players')
 for role, bits, ratings in (('striker', fc, shooting), ('keeper', gk, goalkeeping)):
-    picks = [p for p in featured if p['role'] == role]
-    if len(picks) != 3 or len({p['id'] for p in picks}) != 3:
-        raise SystemExit(f'featured {role} choices must contain three distinct players')
-    tiers = set()
-    for player in picks:
-        player_id = player['id']
-        if not bits[player_id // 8] & (1 << (player_id % 8)):
-            raise SystemExit(f'featured {role} {player_id} has the wrong primary position')
-        rating = ratings[player_id]
-        tiers.add(0 if rating >= 90 else 1 if rating >= 75 else 2 if rating >= 55 else -1)
-    if tiers != {0, 1, 2}:
-        raise SystemExit(f'featured {role} choices must cover the three rating tiers')
-    rosters[role] = [p['id'] for p in picks]
+    for seat in (0, 1):
+        picks = [p for p in featured if p['role'] == role and p['seat'] == seat]
+        if len(picks) != 5:
+            raise SystemExit(f'P{seat + 1} {role} choices must contain five players')
+        tiers = set()
+        for player in picks:
+            player_id = player['id']
+            if player_id <= 0 or player_id >= len(ratings) or not bits[player_id // 8] & (1 << (player_id % 8)):
+                raise SystemExit(f'featured {role} {player_id} has the wrong primary position')
+            rating = ratings[player_id]
+            tiers.add(0 if rating >= 90 else 1 if rating >= 80 else 2 if rating >= 70 else 3 if rating >= 60 else 4 if rating >= 55 else -1)
+        if tiers != set(range(5)):
+            raise SystemExit(f'P{seat + 1} {role} must cover all five rating tiers')
+        rosters[(role, seat)] = [p['id'] for p in picks]
 
 (root / 'rules/pulse/featured_roster.inc').write_text(
     '// Generated from src/lib/pulse/featured.json; validated against pinned roles and ratings.\n'
-    'constexpr std::uint32_t rosterShooters[3] = {' + ', '.join(map(str, rosters['striker'])) + '};\n'
-    'constexpr std::uint32_t rosterKeepers[3] = {' + ', '.join(map(str, rosters['keeper'])) + '};\n'
+    'constexpr std::uint32_t rosterShooters[2][5] = {\n' +
+    ''.join('  {' + ', '.join(map(str, rosters[('striker', seat)])) + '},\n' for seat in (0, 1)) + '};\n'
+    'constexpr std::uint32_t rosterKeepers[2][5] = {\n' +
+    ''.join('  {' + ', '.join(map(str, rosters[('keeper', seat)])) + '},\n' for seat in (0, 1)) + '};\n'
 )
 
 code = '// Generated from the pinned Soccerverse position bitsets.\n'

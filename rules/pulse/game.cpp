@@ -20,7 +20,7 @@ constexpr std::uint8_t playerGoalkeeping[] = {
 #include "player_goalkeeping.inc"
 };
 #include "featured_roster.inc"
-bool inRoster(std::uint32_t id, const std::uint32_t (&roster)[3]) {
+bool inRoster(std::uint32_t id, const std::uint32_t (&roster)[5]) {
   for (auto choice : roster) if (id == choice) return true;
   return false;
 }
@@ -36,9 +36,9 @@ bool allZero(const std::array<std::uint8_t, 32>& b) {
   return true;
 }
 int scoreWinner(std::uint8_t kick, const std::uint8_t goals[2]) {
-  if (kick < 6) {
-    const int remaining0 = 3 - (kick + 1) / 2;
-    const int remaining1 = 3 - kick / 2;
+  if (kick < 10) {
+    const int remaining0 = 5 - (kick + 1) / 2;
+    const int remaining1 = 5 - kick / 2;
     if (goals[0] > goals[1] + remaining1) return 0;
     if (goals[1] > goals[0] + remaining0) return 1;
     return -1;
@@ -52,18 +52,18 @@ int expectedTurn(Phase phase, std::uint8_t kick) {
   return (phase == CHOOSE_SHOOTER || phase == SHOOT) ? kick % 2 : 1 - kick % 2;
 }
 bool tierUsed(const State& s, int seat, std::uint32_t id, bool keeper) {
-  if (s.kick >= 6) return false;
+  if (s.kick >= 10) return false;
   const auto tier = ratingTier(keeper ? goalkeeperRating(id) : shootingRating(id));
   const auto& used = keeper ? s.usedKeepers[seat] : s.usedShooters[seat];
   for (auto previous : used)
     if (previous && ratingTier(keeper ? goalkeeperRating(previous) : shootingRating(previous)) == tier) return true;
   return false;
 }
-bool validShooter(std::uint32_t id) {
-  return inRoster(id, rosterShooters) && isCentreForward(id) && ratingTier(shootingRating(id)) >= 0;
+bool validShooter(std::uint32_t id, int seat) {
+  return inRoster(id, rosterShooters[seat]) && isCentreForward(id) && ratingTier(shootingRating(id)) >= 0;
 }
-bool validKeeper(std::uint32_t id) {
-  return inRoster(id, rosterKeepers) && isGoalkeeper(id) && ratingTier(goalkeeperRating(id)) >= 0;
+bool validKeeper(std::uint32_t id, int seat) {
+  return inRoster(id, rosterKeepers[seat]) && isGoalkeeper(id) && ratingTier(goalkeeperRating(id)) >= 0;
 }
 } // namespace
 
@@ -103,11 +103,15 @@ bool isScoringTarget(std::uint32_t id, std::uint8_t target) {
   return false;
 }
 int ratingTier(std::uint8_t rating) {
-  return rating >= 90 && rating <= 100 ? 0 : rating >= 75 && rating < 90 ? 1 :
-    rating >= 55 && rating < 75 ? 2 : -1;
+  return rating >= 90 && rating <= 100 ? 0 : rating >= 80 && rating < 90 ? 1 :
+    rating >= 70 && rating < 80 ? 2 : rating >= 60 && rating < 70 ? 3 :
+    rating >= 55 && rating < 60 ? 4 : -1;
 }
 bool canReach(std::uint32_t keeper, std::uint32_t shooter) {
-  return goalkeeperRating(keeper) >= 75 && scoringTargetCount(shooter) >= 4;
+  const auto rating = goalkeeperRating(keeper);
+  const auto targets = scoringTargetCount(shooter);
+  return rating >= 80 ? targets >= 4 : rating >= 70 ? targets >= 6 :
+    rating >= 60 ? targets >= 8 : false;
 }
 bool adjacent(std::uint8_t first, std::uint8_t second) {
   if (first > 8 || second > 8 || first == second) return false;
@@ -138,7 +142,7 @@ bool initial(std::uint8_t participants, const std::uint8_t*, std::size_t cfgLeng
 
 std::array<std::uint8_t, STATE_SIZE> encode(const State& s) {
   std::array<std::uint8_t, STATE_SIZE> b{};
-  b[0] = 5; b[1] = s.participants; b[2] = s.phase; b[3] = s.turn;
+  b[0] = 6; b[1] = s.participants; b[2] = s.phase; b[3] = s.turn;
   b[4] = s.kick; b[5] = s.goals[0]; b[6] = s.goals[1];
   b[7] = static_cast<std::uint8_t>(s.winner);
   b[8] = std::uint8_t(s.turnCount); b[9] = std::uint8_t(s.turnCount >> 8);
@@ -146,25 +150,25 @@ std::array<std::uint8_t, STATE_SIZE> encode(const State& s) {
   write32(b.data() + 42, s.pendingShooter); b[46] = s.pendingLane;
   b[47] = s.lastResult;
   for (int seat = 0; seat < 2; ++seat)
-    for (int shot = 0; shot < 3; ++shot)
-      write32(b.data() + 48 + 4 * (seat * 3 + shot), s.usedShooters[seat][shot]);
-  write32(b.data() + 72, s.lastPlayer);
-  b[76] = s.lastShot; b[77] = s.lastGuard;
-  write32(b.data() + 78, s.pairShooters[0]);
-  write32(b.data() + 82, s.pairShooters[1]);
-  b[86] = s.lastReach;
-  write32(b.data() + 87, s.pairKeepers[0]);
-  write32(b.data() + 91, s.pairKeepers[1]);
+    for (int shot = 0; shot < 5; ++shot)
+      write32(b.data() + 48 + 4 * (seat * 5 + shot), s.usedShooters[seat][shot]);
+  write32(b.data() + 88, s.lastPlayer);
+  b[92] = s.lastShot; b[93] = s.lastGuard;
+  write32(b.data() + 94, s.pairShooters[0]);
+  write32(b.data() + 98, s.pairShooters[1]);
+  b[102] = s.lastReach;
+  write32(b.data() + 103, s.pairKeepers[0]);
+  write32(b.data() + 107, s.pairKeepers[1]);
   for (int seat = 0; seat < 2; ++seat)
-    for (int shot = 0; shot < 3; ++shot)
-      write32(b.data() + 95 + 4 * (seat * 3 + shot), s.usedKeepers[seat][shot]);
-  write32(b.data() + 119, s.pendingKeeper);
-  write32(b.data() + 123, s.lastKeeper);
+    for (int shot = 0; shot < 5; ++shot)
+      write32(b.data() + 111 + 4 * (seat * 5 + shot), s.usedKeepers[seat][shot]);
+  write32(b.data() + 151, s.pendingKeeper);
+  write32(b.data() + 155, s.lastKeeper);
   return b;
 }
 
 bool decode(const std::uint8_t* b, std::size_t n, std::uint8_t participants, State& s) {
-  if (!b || n != STATE_SIZE || b[0] != 5 || b[1] != participants) return false;
+  if (!b || n != STATE_SIZE || b[0] != 6 || b[1] != participants) return false;
   s.participants = b[1]; s.phase = static_cast<Phase>(b[2]); s.turn = b[3];
   s.kick = b[4]; s.goals[0] = b[5]; s.goals[1] = b[6];
   s.winner = static_cast<std::int8_t>(b[7]);
@@ -173,17 +177,17 @@ bool decode(const std::uint8_t* b, std::size_t n, std::uint8_t participants, Sta
   s.pendingShooter = read32(b + 42); s.pendingLane = b[46];
   s.lastResult = static_cast<Result>(b[47]);
   for (int seat = 0; seat < 2; ++seat)
-    for (int shot = 0; shot < 3; ++shot)
-      s.usedShooters[seat][shot] = read32(b + 48 + 4 * (seat * 3 + shot));
-  s.lastPlayer = read32(b + 72); s.lastShot = b[76]; s.lastGuard = b[77];
-  s.pairShooters[0] = read32(b + 78); s.pairShooters[1] = read32(b + 82);
-  s.lastReach = b[86];
-  s.pairKeepers[0] = read32(b + 87); s.pairKeepers[1] = read32(b + 91);
+    for (int shot = 0; shot < 5; ++shot)
+      s.usedShooters[seat][shot] = read32(b + 48 + 4 * (seat * 5 + shot));
+  s.lastPlayer = read32(b + 88); s.lastShot = b[92]; s.lastGuard = b[93];
+  s.pairShooters[0] = read32(b + 94); s.pairShooters[1] = read32(b + 98);
+  s.lastReach = b[102];
+  s.pairKeepers[0] = read32(b + 103); s.pairKeepers[1] = read32(b + 107);
   for (int seat = 0; seat < 2; ++seat)
-    for (int shot = 0; shot < 3; ++shot)
-      s.usedKeepers[seat][shot] = read32(b + 95 + 4 * (seat * 3 + shot));
-  s.pendingKeeper = read32(b + 119);
-  s.lastKeeper = read32(b + 123);
+    for (int shot = 0; shot < 5; ++shot)
+      s.usedKeepers[seat][shot] = read32(b + 111 + 4 * (seat * 5 + shot));
+  s.pendingKeeper = read32(b + 151);
+  s.lastKeeper = read32(b + 155);
   return true;
 }
 
@@ -218,25 +222,25 @@ bool valid(const State& s) {
   if (shooterChosen != bool(s.pairShooters[shooterSeat]) ||
       keeperChosen != bool(s.pairKeepers[defenderSeat]) ||
       s.pairShooters[defenderSeat] || s.pairKeepers[shooterSeat] ||
-      (shooterChosen && !validShooter(s.pairShooters[shooterSeat])) ||
-      (keeperChosen && !validKeeper(s.pairKeepers[defenderSeat]))) return false;
+      (shooterChosen && !validShooter(s.pairShooters[shooterSeat], shooterSeat)) ||
+      (keeperChosen && !validKeeper(s.pairKeepers[defenderSeat], defenderSeat))) return false;
   for (int seat = 0; seat < 2; ++seat) {
     const int completedShoot = (s.kick + 1 - seat) / 2;
     const int completedKeep = (s.kick + seat) / 2;
-    const int assignedShoot = s.kick < 6 ? completedShoot + (shooterChosen && seat == shooterSeat) : 3;
-    const int assignedKeep = s.kick < 6 ? completedKeep + (keeperChosen && seat == defenderSeat) : 3;
-    for (int i = 0; i < 3; ++i) {
+    const int assignedShoot = s.kick < 10 ? completedShoot + (shooterChosen && seat == shooterSeat) : 5;
+    const int assignedKeep = s.kick < 10 ? completedKeep + (keeperChosen && seat == defenderSeat) : 5;
+    for (int i = 0; i < 5; ++i) {
       const auto shooter = s.usedShooters[seat][i], keeper = s.usedKeepers[seat][i];
       if ((i < assignedShoot) != bool(shooter) || (i < assignedKeep) != bool(keeper) ||
-          (shooter && !validShooter(shooter)) || (keeper && !validKeeper(keeper))) return false;
+          (shooter && !validShooter(shooter, seat)) || (keeper && !validKeeper(keeper, seat))) return false;
       for (int j = 0; j < i; ++j) {
         if (shooter && ratingTier(shootingRating(shooter)) == ratingTier(shootingRating(s.usedShooters[seat][j]))) return false;
         if (keeper && ratingTier(goalkeeperRating(keeper)) == ratingTier(goalkeeperRating(s.usedKeepers[seat][j]))) return false;
       }
     }
-    if (s.kick < 6 && shooterChosen && seat == shooterSeat &&
+    if (s.kick < 10 && shooterChosen && seat == shooterSeat &&
         s.usedShooters[seat][completedShoot] != s.pairShooters[seat]) return false;
-    if (s.kick < 6 && keeperChosen && seat == defenderSeat &&
+    if (s.kick < 10 && keeperChosen && seat == defenderSeat &&
         s.usedKeepers[seat][completedKeep] != s.pairKeepers[seat]) return false;
   }
   if ((active == SHOOT || active == REVEAL) == allZero(s.commitment) ||
@@ -244,7 +248,7 @@ bool valid(const State& s) {
   if (s.kick == 0) {
     if (s.lastResult != NONE || s.lastPlayer || s.lastKeeper || s.lastShot != 255 ||
         s.lastGuard != 255 || s.lastReach != 255) return false;
-  } else if (s.lastResult == NONE || !validShooter(s.lastPlayer) || !validKeeper(s.lastKeeper) ||
+  } else if (s.lastResult == NONE || !validShooter(s.lastPlayer, (s.kick - 1) % 2) || !validKeeper(s.lastKeeper, 1 - (s.kick - 1) % 2) ||
              s.lastShot > 8 || !isScoringTarget(s.lastPlayer, s.lastShot) ||
              !validReach(s.lastKeeper, s.lastPlayer, s.lastGuard, s.lastReach)) return false;
   if (s.kick > 0) {
@@ -263,16 +267,16 @@ bool apply(State& s, const std::uint8_t* m, std::size_t n) {
   if (s.phase == CHOOSE_SHOOTER) {
     if (n != 5 || m[0] != 4) return false;
     const auto shooter = read32(m + 1);
-    if (!validShooter(shooter) || tierUsed(s, shooterSeat, shooter, false)) return false;
+    if (!validShooter(shooter, shooterSeat) || tierUsed(s, shooterSeat, shooter, false)) return false;
     next.pairShooters[shooterSeat] = shooter;
-    if (s.kick < 6) next.usedShooters[shooterSeat][s.kick / 2] = shooter;
+    if (s.kick < 10) next.usedShooters[shooterSeat][s.kick / 2] = shooter;
     next.phase = CHOOSE_KEEPER; next.turn = defenderSeat;
   } else if (s.phase == CHOOSE_KEEPER) {
     if (n != 5 || m[0] != 5) return false;
     const auto keeper = read32(m + 1);
-    if (!validKeeper(keeper) || tierUsed(s, defenderSeat, keeper, true)) return false;
+    if (!validKeeper(keeper, defenderSeat) || tierUsed(s, defenderSeat, keeper, true)) return false;
     next.pairKeepers[defenderSeat] = keeper;
-    if (s.kick < 6) next.usedKeepers[defenderSeat][s.kick / 2] = keeper;
+    if (s.kick < 10) next.usedKeepers[defenderSeat][s.kick / 2] = keeper;
     next.phase = COMMIT;
   } else if (s.phase == COMMIT) {
     if (n != 33 || m[0] != 1) return false;

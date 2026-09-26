@@ -32,11 +32,14 @@ def edge_adjacent(a, b):
     return adjacent(a, b) and (a % 3 == b % 3) != (a // 3 == b // 3)
 
 @lru_cache(None)
-def score_value(targets_, keeper_tier):
-    guards = ([(a,) for a in range(9)] if keeper_tier == 2 or len(targets_) < 4 else
-              [(a, b) for a in range(9) for b in range(a + 1, 9) if adjacent(a, b)] if keeper_tier == 0 else
-              [(a, b) for a in range(9) for b in range(a + 1, 9) if edge_adjacent(a, b)])
-    # Minimize the defender's largest save chance across all legal positions.
+def score_value(targets_, keeper_rating):
+    minimum = (4 if keeper_rating >= 80 else 6 if keeper_rating >= 70 else
+               8 if keeper_rating >= 60 else 10)
+    if len(targets_) < minimum:
+        guards = [(a,) for a in range(9)]
+    else:
+        touching = adjacent if keeper_rating >= 90 else edge_adjacent
+        guards = [(a, b) for a in range(9) for b in range(a + 1, 9) if touching(a, b)]
     a_ub = [[*[int(t in guard) for t in targets_], -1] for guard in guards]
     result = linprog([*[0] * len(targets_), 1], A_ub=a_ub,
                      b_ub=[0] * len(guards),
@@ -47,23 +50,22 @@ def score_value(targets_, keeper_tier):
     return 1 - result.x[-1]
 
 def goal(attacker, defender):
-    goalkeeper_tier = 0 if keep[defender] >= 90 else 1 if keep[defender] >= 75 else 2
-    return score_value(targets(attacker), goalkeeper_tier)
+    return score_value(targets(attacker), keep[defender])
 
+bands = ((90, 100), (80, 89), (70, 79), (60, 69), (55, 59))
 ids = [i for i, s in enumerate(shoot) if s != 255]
 shooters = [i for i in ids if fc[i // 8] & (1 << (i % 8))]
 keepers = [i for i in ids if gk[i // 8] & (1 << (i % 8))]
 print('Official pinned players:', len(ids))
 print('Eligible FC shooters / GK keepers:', len(shooters), '/', len(keepers))
-print('Eligible shooting tiers 90+/75–89/55–74:',
-      [sum(lo <= shoot[i] <= hi for i in shooters) for lo, hi in ((90, 100), (75, 89), (55, 74))])
-print('Eligible keeper tiers 90+/75–89/55–74:',
-      [sum(lo <= keep[i] <= hi for i in keepers) for lo, hi in ((90, 100), (75, 89), (55, 74))])
-print('Featured shooter vs keeper, optimal goal %:')
-for attacker in (p for p in featured if p['role'] == 'striker'):
-    print(' ', attacker['name'], 'shooting', shoot[attacker['id']], 'zones', count(attacker['id']),
-          [(defender['name'], round(100 * goal(attacker['id'], defender['id']), 1))
-           for defender in featured if defender['role'] == 'keeper'])
-print('Three-zone underdog vs every featured keeper:',
-      [(defender['name'], round(100 * goal(1917, defender['id']), 1))
-       for defender in featured if defender['role'] == 'keeper'])
+print('Bands 90+, 80–89, 70–79, 60–69, 55–59')
+print('Eligible FC:', [sum(lo <= shoot[i] <= hi for i in shooters) for lo, hi in bands])
+print('Eligible GK:', [sum(lo <= keep[i] <= hi for i in keepers) for lo, hi in bands])
+for attack_seat in (0, 1):
+    roster_shooters = [p for p in featured if p['role'] == 'striker' and p['seat'] == attack_seat]
+    roster_keepers = [p for p in featured if p['role'] == 'keeper' and p['seat'] != attack_seat]
+    print(f'P{attack_seat + 1} shooting vs P{2 - attack_seat} keeping; optimal one-kick goal %:')
+    for attacker in roster_shooters:
+        print(' ', attacker['name'], shoot[attacker['id']], count(attacker['id']),
+              [(defender['name'], round(100 * goal(attacker['id'], defender['id']), 1))
+               for defender in roster_keepers])

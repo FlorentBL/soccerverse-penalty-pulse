@@ -6,7 +6,7 @@
 
 namespace pulse {
 
-constexpr std::size_t STATE_SIZE = 127;
+constexpr std::size_t STATE_SIZE = 159;
 enum Phase : std::uint8_t { CHOOSE_SHOOTER = 0, CHOOSE_KEEPER = 1,
   COMMIT = 2, SHOOT = 3, REVEAL = 4, FINISHED = 6 };
 enum Result : std::uint8_t { NONE = 0, GOAL = 1, SAVED = 2 };
@@ -24,8 +24,8 @@ struct State {
   std::uint32_t pendingKeeper = 0;
   std::uint8_t pendingLane = 255;
   Result lastResult = NONE;
-  std::uint32_t usedShooters[2][3] = {};
-  std::uint32_t usedKeepers[2][3] = {};
+  std::uint32_t usedShooters[2][5] = {};
+  std::uint32_t usedKeepers[2][5] = {};
   std::uint32_t lastPlayer = 0;
   std::uint32_t lastKeeper = 0;
   std::uint8_t lastShot = 255;

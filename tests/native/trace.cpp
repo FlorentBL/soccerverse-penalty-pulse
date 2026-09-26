@@ -26,20 +26,20 @@ std::array<std::uint8_t, 5> player(std::uint8_t opcode, std::uint32_t id) {
   std::array<std::uint8_t, 5> out{}; out[0] = opcode; put32(out.data() + 1, id); return out;
 }
 int main() {
-  constexpr std::uint32_t shooters[2][3] = {{184, 874, 1917}, {874, 1917, 184}};
-  constexpr std::uint32_t keepers[2][3] = {{19465, 1438, 62}, {1438, 62, 19465}};
+  constexpr std::uint32_t shooters[2][5] = {{184, 874, 18883, 2866, 1917}, {1100, 154, 2493, 18810, 1347}};
+  constexpr std::uint32_t keepers[2][5] = {{19465, 1438, 313, 161, 3}, {556, 2932, 64, 1621, 884}};
   for (int mode = 0; mode < 2; ++mode) {
     State s; initial(2, nullptr, 0, s);
     std::cout << "mode " << mode << '\n';
     const auto initialBytes = encode(s); hex(initialBytes.data(), initialBytes.size()); std::cout << '\n';
-    for (int k = 0; k < (mode == 0 ? 4 : 8); ++k) {
-      const int seat = k % 2, round = k / 2 < 3 ? k / 2 : 0;
+    for (int k = 0; k < (mode == 0 ? 6 : 12); ++k) {
+      const int seat = k % 2, round = k < 10 ? k / 2 : 0;
       step(s, player(4, shooters[seat][round]));
       step(s, player(5, keepers[1 - seat][round]));
       const auto striker = s.pairShooters[seat];
       const auto keeper = s.pairKeepers[1 - seat];
       std::uint8_t target = 0; while (!isScoringTarget(striker, target)) ++target;
-      const bool goal = mode == 0 ? k % 2 == 0 : k == 6;
+      const bool goal = mode == 0 ? k % 2 == 0 : k == 10;
       const auto guard = std::uint8_t(goal ? (target + 1) % 9 : target);
       std::uint8_t reach = 255;
       if (canReach(keeper, striker))

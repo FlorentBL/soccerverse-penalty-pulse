@@ -8,7 +8,7 @@ export type PulseInput = { type: 'shooter'; kick: number; playerId: number } |
   { type: 'shot'; kick: number; lane: number };
 interface GuardSecret { lane: number; reach: number; salt: number[] }
 function key(channelId: bigint | null, seat: number, kick: number): string {
-  return 'penaltypulse:v5:guard:' + String(channelId) + ':' + seat + ':' + kick;
+  return 'penaltypulse:v6:guard:' + String(channelId) + ':' + seat + ':' + kick;
 }
 function validSalt(value: unknown): value is number[] {
   return Array.isArray(value) && value.length === 32 &&
@@ -38,8 +38,8 @@ export class PulseChannel implements ArcadeChannel {
     if (!input || typeof input !== 'object') return;
     const p = input as PulseInput;
     if (!Number.isInteger(p.kick) || p.kick < 0 || p.kick >= 254) return;
-    if (p.type === 'shooter' ? !isRosterShooter(p.playerId) :
-        p.type === 'keeper' ? !isRosterKeeper(p.playerId) :
+    if (p.type === 'shooter' ? !isRosterShooter(p.playerId, p.kick % 2) :
+        p.type === 'keeper' ? !isRosterKeeper(p.playerId, 1 - p.kick % 2) :
         (p.type === 'guard' || p.type === 'shot') ?
           !Number.isInteger(p.lane) || p.lane < 0 || p.lane > 8 ||
           (p.type === 'guard' && (!Number.isInteger(p.reach) ||
@@ -62,12 +62,12 @@ export class PulseChannel implements ArcadeChannel {
     this.pending = null;
     if (game.phase === 0 && this.seat === shooterSeat && input.type === 'shooter') {
       if (ratingTier(shootingRating(input.playerId)) < 0 ||
-          tierUsed(game.usedShooters[this.seat], input.playerId, 'shoot')) return null;
+          game.kick < 10 && tierUsed(game.usedShooters[this.seat], input.playerId, 'shoot')) return null;
       return encodeShooter(input.playerId);
     }
     if (game.phase === 1 && this.seat === defenderSeat && input.type === 'keeper') {
       if (ratingTier(goalkeeperRating(input.playerId)) < 0 ||
-          tierUsed(game.usedKeepers[this.seat], input.playerId, 'save')) return null;
+          game.kick < 10 && tierUsed(game.usedKeepers[this.seat], input.playerId, 'save')) return null;
       return encodeKeeper(input.playerId);
     }
     if (game.phase === 2 && this.seat === defenderSeat && input.type === 'guard') {
