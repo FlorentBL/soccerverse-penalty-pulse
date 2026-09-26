@@ -20,13 +20,14 @@
 ## Artifacts
 
 - Local repository: `/Users/fbl/Documents/soccerverse-penalty-pulse`
-- Remote Git URL: **pending**
-- Tested full commit SHA: **pending until final local commit**
+- Remote Git URL: `https://github.com/FlorentBL/soccerverse-penalty-pulse` (private during playground testing)
+- Tested game commit SHA: `9fa9b6ec82a8256de734f186cc15ced3ac9e83d4`
 - WASM path: `blob/rules.wasm`
 - WASM SHA-256: `b0bfcd4a08cb2a0d83e6cc65ba8214b0c00b538631595ede73860591ba224c9f`
 - State encoding: version 2, fixed 87 bytes
 - Bundle path: `dist/bundle.tar.gz` (generated locally, ignored by Git)
-- Local playground bundle SHA-256: `5e0df5187cd91a973930f3760fd7332967e28ee3d96ef458640f630c5c45474a` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host must supply runtime relay, GSP and Polygon endpoints; the local export intentionally used blank endpoint variables.
+- Attached playground bundle SHA-256: `5e0df5187cd91a973930f3760fd7332967e28ee3d96ef458640f630c5c45474a` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host supplies runtime relay, GSP and Polygon endpoints; the local export intentionally used blank endpoint variables.
+- Playground attachment: `20260926-163752-penalty-pulse-bbda`; [status](https://test-arcade.xaya.io/api/submissions/20260926-163752-penalty-pulse-bbda), [play](https://test-arcade.xaya.io/play/penalty-pulse). Auto-accept completed every step (`preflight`, `slots`, `bake`, `onchain`, `register`, `content`, `verify`, `accepted`) with no preflight warnings on 2026-09-26. This is the disposable test chain, not a public Arcade submission.
 - Source datapack SHA-256: `d8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e`
 - Soccerverse shooting table SHA-256: `fe0eb9c810a27f17f6ad605ee29669449774bc2a55603e0cfaa6c1e1065abfd6`
 - Soccerverse goalkeeper table SHA-256: `e615569b6699fdc1dbdb3bfd0bf0b0ec1f3b514ee006e3e71fb2a9e849dc60f2`
@@ -43,8 +44,7 @@
 
 ## Required before submission
 
-1. Publish this repository remotely and record its HTTPS URL and final tested full commit SHA.
-2. Build the final bundle for the target Arcade namespace and record its SHA-256 after any further changes.
-3. Attach the WASM and bundle on [XAYA's playground](https://test-arcade.xaya.io/attach) with the values above; confirm preflight accepts the game type, cfg and artifacts.
-4. Play a complete game using **two independent accounts/browser profiles** through `/play/penalty-pulse`. Check hidden player-pick commit/reveal, keeper commit/reveal with one and two zones, saves, goals, early finish or sudden death, timeout/disconnect recovery and a mobile viewport. Record the match result. This has **not** been performed locally.
-5. Submit via the [official XAYA game submission form](https://github.com/xaya/arcade-submissions/issues/new?template=game-submission.yml) only after 1–4 pass. Slug and game type availability need platform preflight.
+1. Play a complete game using **two independent accounts/browser profiles** through `/play/penalty-pulse`. Check hidden player-pick commit/reveal, keeper commit/reveal with one and two zones, saves, goals, early finish or sudden death, timeout/disconnect recovery and a mobile viewport. Record the match result. This has **not** been performed yet. A free table was created from a second browser profile as `p/tw2ace`; the other profile loaded the open table as `p/tw1ace`, but automated interaction with its cross-origin game iframe could not complete the join.
+2. Rebuild and record the final bundle SHA-256 after any game changes; the current tested bundle is attached to the playground.
+3. Make the source accessible to XAYA reviewers (publish the repository or grant them access). The playground accepts a private source URL, but it does not make the source readable to reviewers.
+4. Submit via the [official XAYA game submission form](https://github.com/xaya/arcade-submissions/issues/new?template=game-submission.yml) only after 1–3 pass. The playground preflight accepted the proposed slug and game type on its disposable chain; availability on the real Arcade is still unconfirmed.
