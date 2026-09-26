@@ -18,6 +18,8 @@ const en = {
   draw: 'DRAW', result: 'LAST KICK', playFree: 'Free play', snapshot: 'Soccerverse player IDs and names; Arcade-specific lane styles.',
   slow: 'The move is taking longer than expected. Check your connection.',
   disconnected: 'The move could not be sent. Try again.',
+  localDemo: 'LOCAL DEMO', previewNoWallet: 'No wallet needed', resetDemo: 'Restart',
+  exitDemo: 'Exit preview', previewButton: 'Preview without wallet', wins: 'WINS',
 } as const;
 type Messages = { [K in keyof typeof en]: string };
 export const messages: Record<Locale, Messages> = {
@@ -36,6 +38,8 @@ export const messages: Record<Locale, Messages> = {
     goal: 'BUT', saved: 'ARRÊT', missed: 'DEHORS', yourWin: 'VICTOIRE', rivalWin: 'DÉFAITE',
     draw: 'ÉGALITÉ', result: 'DERNIER TIR', playFree: 'Jeu gratuit', snapshot: 'IDs et noms Soccerverse ; styles propres à Arcade.',
     slow: 'Le coup tarde. Vérifiez votre connexion.', disconnected: 'Le coup n’a pas été envoyé. Réessayez.',
+    localDemo: 'DÉMO LOCALE', previewNoWallet: 'Sans wallet', resetDemo: 'Recommencer',
+    exitDemo: 'Quitter l’aperçu', previewButton: 'Aperçu sans wallet', wins: 'GAGNE',
   },
   it: {
     language: 'Lingua', title: 'PENALTY PULSE', subtitle: 'Una sfida Soccerverse', controlsHint: 'Scegli la direzione del portiere. Tira con un giocatore Soccerverse.',
@@ -51,6 +55,8 @@ export const messages: Record<Locale, Messages> = {
     goal: 'GOL', saved: 'PARATA', missed: 'FUORI', yourWin: 'HAI VINTO', rivalWin: 'HAI PERSO',
     draw: 'PAREGGIO', result: 'ULTIMO TIRO', playFree: 'Gioco gratuito', snapshot: 'ID e nomi Soccerverse; stili propri di Arcade.',
     slow: 'La mossa richiede tempo. Controlla la connessione.', disconnected: 'Mossa non inviata. Riprova.',
+    localDemo: 'DEMO LOCALE', previewNoWallet: 'Senza wallet', resetDemo: 'Ricomincia',
+    exitDemo: 'Esci dall’anteprima', previewButton: 'Anteprima senza wallet', wins: 'VINCE',
   },
   es: {
     language: 'Idioma', title: 'PENALTY PULSE', subtitle: 'Un duelo Soccerverse', controlsHint: 'Elige hacia dónde se lanza el portero. Tira con un jugador Soccerverse.',
@@ -66,6 +72,8 @@ export const messages: Record<Locale, Messages> = {
     goal: 'GOL', saved: 'PARADA', missed: 'FUERA', yourWin: 'GANASTE', rivalWin: 'PERDISTE',
     draw: 'EMPATE', result: 'ÚLTIMO TIRO', playFree: 'Juego gratis', snapshot: 'IDs y nombres Soccerverse; estilos propios de Arcade.',
     slow: 'La jugada tarda. Comprueba la conexión.', disconnected: 'No se envió la jugada. Reinténtalo.',
+    localDemo: 'DEMO LOCAL', previewNoWallet: 'Sin wallet', resetDemo: 'Reiniciar',
+    exitDemo: 'Salir de la vista previa', previewButton: 'Vista previa sin wallet', wins: 'GANA',
   },
   pt: {
     language: 'Idioma', title: 'PENALTY PULSE', subtitle: 'Um duelo Soccerverse', controlsHint: 'Escolha para onde mergulha o guarda-redes. Remate com um jogador Soccerverse.',
@@ -81,6 +89,8 @@ export const messages: Record<Locale, Messages> = {
     goal: 'GOLO', saved: 'DEFESA', missed: 'FORA', yourWin: 'VITÓRIA', rivalWin: 'DERROTA',
     draw: 'EMPATE', result: 'ÚLTIMO REMATE', playFree: 'Jogo grátis', snapshot: 'IDs e nomes Soccerverse; estilos próprios de Arcade.',
     slow: 'A jogada está a demorar. Verifique a ligação.', disconnected: 'Jogada não enviada. Tente novamente.',
+    localDemo: 'DEMO LOCAL', previewNoWallet: 'Sem wallet', resetDemo: 'Recomeçar',
+    exitDemo: 'Sair da pré-visualização', previewButton: 'Pré-visualizar sem wallet', wins: 'VENCE',
   },
 };
 export function isLocale(value: string | null): value is Locale { return locales.some(locale => locale === value); }

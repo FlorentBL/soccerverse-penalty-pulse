@@ -7,15 +7,22 @@ import { submitPulseInput } from '@/hooks/use-pulse-input';
 import type { PulseState } from '@/lib/pulse/codec';
 import { primaryLane, secondaryLane } from '@/lib/pulse/codec';
 import { featuredPlayers, findPlayerName } from '@/lib/pulse/players';
-import { keeperChoice } from '@/lib/pulse/channel';
+import { keeperChoice, type PulseInput } from '@/lib/pulse/channel';
 import './PulseBoard.css';
 
 const labels = ['left', 'centre', 'right'] as const;
-export default function PulseBoard({ localPlayerIndex }: { localPlayerIndex: number }) {
+interface PulseBoardProps {
+  localPlayerIndex: number;
+  previewState?: PulseState;
+  onPreviewInput?: (input: PulseInput) => Promise<boolean>;
+}
+export default function PulseBoard({ localPlayerIndex, previewState, onPreviewInput }: PulseBoardProps) {
   const { t } = useLanguage();
   const raw = useChannelStore(s => s.boardState) as PulseState | null;
   const channelId = useChannelStore(s => s.channelId);
-  const game = raw && Array.isArray(raw.goals) && raw.goals.length === 2 ? raw : null;
+  const candidate = previewState ?? raw;
+  const game = candidate && Array.isArray(candidate.goals) && candidate.goals.length === 2 ? candidate : null;
+  const preview = previewState !== undefined;
   const [guard, setGuard] = useState<number | null>(null);
   const [lockedGuard, setLockedGuard] = useState<number | null>(null);
   const [aim, setAim] = useState<number | null>(null);
@@ -35,11 +42,11 @@ export default function PulseBoard({ localPlayerIndex }: { localPlayerIndex: num
     setBusy(false); setError('');
   }, [game?.turnCount]);
   useEffect(() => {
-    if (game?.phase === 1 && game.turn === localPlayerIndex) {
+    if (!preview && game?.phase === 1 && game.turn === localPlayerIndex) {
       const saved = keeperChoice(channelId, localPlayerIndex, game.kick);
       setLockedGuard(saved); setGuard(saved);
     }
-  }, [channelId, game?.phase, game?.kick, game?.turn, localPlayerIndex]);
+  }, [channelId, game?.phase, game?.kick, game?.turn, localPlayerIndex, preview]);
   useEffect(() => {
     if ((game?.phase !== 1 && game?.phase !== 2) || !game.pendingPlayer) return;
     let live = true;
@@ -73,30 +80,31 @@ export default function PulseBoard({ localPlayerIndex }: { localPlayerIndex: num
     if (!input) return;
     setBusy(true); setError('');
     try {
-      if (!await submitPulseInput(input)) { setBusy(false); setError(t.disconnected); }
+      if (!await (onPreviewInput ?? submitPulseInput)(input)) { setBusy(false); setError(t.disconnected); }
     } catch { setBusy(false); setError(t.disconnected); }
   }
   const finished = game?.phase === 4;
   const result = game?.lastResult === 1 ? t.goal : game?.lastResult === 2 ? t.saved : game?.lastResult === 3 ? t.missed : '—';
   const instructions = !game ? t.waiting :
-    finished ? game.winner === -2 ? t.draw : game.winner === localPlayerIndex ? t.yourWin : t.rivalWin :
+    finished ? game.winner === -2 ? t.draw : preview ? `P${game.winner + 1} ${t.wins}` : game.winner === localPlayerIndex ? t.yourWin : t.rivalWin :
     game.phase === 3 ? t.revealPrompt : picking ? t.pickPrompt : defending ? t.guardPrompt : shooting ? t.shotPrompt : t.waiting;
   const displayId = defending || shooting ? game?.pendingPlayer ?? null : playerId;
   const allowed = displayId === null ? [] : [primaryLane(displayId), secondaryLane(displayId)];
-  const phaseLabel = defending ? t.keeper : picking || shooting ? t.striker : t.result;
+  const roleLabel = defending ? t.keeper : picking || shooting ? t.striker : t.result;
+  const phaseLabel = preview && (picking || defending || shooting) ? `P${localPlayerIndex + 1} / ${roleLabel}` : roleLabel;
 
   return <main className="pulse-root">
     <header className="pulse-top">
       <div className="pulse-brand"><span className="pulse-brand-mark" aria-hidden="true"><i /><i /><i /></span>
         <div><span className="pulse-kicker">{t.subtitle}</span><h1>{t.title}</h1></div></div>
-      <span className="pulse-free"><i aria-hidden="true" />{t.playFree}</span>
+      <span className="pulse-free"><i aria-hidden="true" />{preview ? t.localDemo : t.playFree}</span>
     </header>
     <div className="pulse-score">
-      <div className={'pulse-score-side ' + (localPlayerIndex === 0 ? 'mine' : '')}><small>{localPlayerIndex === 0 ? t.you : t.rival}</small><strong>{game?.goals[0] ?? 0}</strong></div>
+      <div className={'pulse-score-side ' + (!preview && localPlayerIndex === 0 ? 'mine' : '')}><small>{preview ? 'P1' : localPlayerIndex === 0 ? t.you : t.rival}</small><strong>{game?.goals[0] ?? 0}</strong></div>
       <div className="pulse-round"><span>{t.round} {Math.min((game?.kick ?? 0) + 1, 6)} <em>{t.of} 6</em></span>
         <div className="pulse-dots">{Array.from({ length: 6 }, (_, i) => <i key={i} className={i < (game?.kick ?? 0) ? 'done' : i === game?.kick ? 'current' : ''} />)}</div>
       </div>
-      <div className={'pulse-score-side pulse-score-away ' + (localPlayerIndex === 1 ? 'mine' : '')}><small>{localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{game?.goals[1] ?? 0}</strong></div>
+      <div className={'pulse-score-side pulse-score-away ' + (!preview && localPlayerIndex === 1 ? 'mine' : '')}><small>{preview ? 'P2' : localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{game?.goals[1] ?? 0}</strong></div>
     </div>
     <section className="pulse-arena" aria-label="Penalty goal">
       <div className="pulse-arena-caption"><span className="pulse-live-dot" aria-hidden="true" />{phaseLabel}</div>

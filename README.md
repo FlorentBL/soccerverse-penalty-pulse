@@ -15,6 +15,8 @@ The two effective lanes are Arcade game traits calculated deterministically from
 
 Open [prototype/index.html](prototype/index.html) through a local static server for a hotseat prototype, or run `npm ci && npm run dev` for the full React app. The full app uses the official XAYA Arcade SDK for its lobby, wallet, channel and signed moves. On the Arcade, the cross-game lobby supplies the matchmaking agreement to that SDK. The match itself requires the Arcade services. Its default language is English, with French, Italian, Spanish and Portuguese in the language selector. The interface declares touch support and adapts to mobile viewports.
 
+During development, open `http://localhost:3001/?preview=1` or choose **Preview without wallet** on the home screen. This opens the actual React board in a local hotseat demo: choose a striker, choose the opposing goalkeeper's dive, then shoot, repeating for six kicks. **Restart** resets the demo. The preview is available only with `npm run dev` and resolves turns locally; it does not create an Arcade match or validate the SDK and WASM multiplayer flow.
+
 The commit/reveal ordering keeps the goalkeeper's chosen direction secret until the striker has shot. The keeper's 32-byte salt is generated locally and stored per channel/seat/kick so reconnects can reveal the same commitment. A lost browser storage record may prevent a reveal and lead to a timeout; use the same browser until the kick resolves.
 
 ## Build and tests
