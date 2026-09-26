@@ -40,6 +40,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const [lookup, setLookup] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const rootRef = useRef<HTMLElement>(null);
   const arenaRef = useRef<HTMLElement>(null);
   const seenKick = useRef<number | null>(null);
   const [replay, setReplay] = useState<ShotReplay | null>(null);
@@ -56,6 +57,11 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   useEffect(() => {
     setGuard(null); setReach(null); setLockedGuard(null); setAim(null); setPlayerId(null); setPlayerName('');
     setBusy(false); setError('');
+  }, [game?.turnCount]);
+  useLayoutEffect(() => {
+    // A mobile player often scrolls through the picker. Show the score and goal
+    // again when the next move arrives, including the opponent's move.
+    if (game && rootRef.current) rootRef.current.scrollTop = 0;
   }, [game?.turnCount]);
   useEffect(() => {
     if (!preview && game?.phase === 3 && game.turn === localPlayerIndex) {
@@ -160,6 +166,8 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const allowed = picking && displayId ? scoringTargets(displayId) : strikerId ? scoringTargets(strikerId) : [];
   const roleLabel = picking ? t.bothRoles : defending ? t.keeper : shooting ? t.striker : t.result;
   const phaseLabel = replay ? t.result : preview && (picking || defending || shooting) ? `P${localPlayerIndex + 1} / ${roleLabel}` : roleLabel;
+  const mobileHint = picking ? t.mobilePick : defending ? reachNeeded && guard !== null ? t.mobileSecondZone : t.mobileKeeper
+    : shooting ? t.mobileAim : finished ? t.result : t.waiting;
   const roleOrder = localPlayerIndex === 0 ? (['shoot', 'save'] as const) : (['save', 'shoot'] as const);
   const activeRole = defending ? 'save' : shooting ? 'shoot' : null;
   const stepNumber = picking ? '01' : activeRole === roleOrder[0] ? '02' : activeRole === roleOrder[1] ? '03' : 'FT';
@@ -179,7 +187,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const extraRound = Math.floor(progress / 2) + (finished && !replay && progress % 2 === 0 && progress > 0 ? 0 : 1);
   const regulationKick = finished && !replay ? Math.max(1, Math.min(shownKick, 6)) : Math.min(shownKick + 1, 6);
 
-  return <main className={'pulse-root' + (replay ? ' pulse-replaying' : '')}>
+  return <main ref={rootRef} className={'pulse-root' + (replay ? ' pulse-replaying' : '')}>
     <header className="pulse-top">
       <div className="pulse-brand"><span className="pulse-brand-mark" aria-hidden="true"><i /><i /><i /></span>
         <div><span className="pulse-kicker">{t.subtitle}</span><h1>{t.title}</h1></div></div>
@@ -193,7 +201,8 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       <div className={'pulse-score-side pulse-score-away ' + (!preview && localPlayerIndex === 1 ? 'mine' : '')}><small>{preview ? 'P2' : localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{shownGoals[1]}</strong></div>
     </div>
     <section className="pulse-arena" aria-label="Penalty goal" ref={arenaRef}>
-      <div className="pulse-arena-caption"><span className="pulse-live-dot" aria-hidden="true" />{phaseLabel}</div>
+      <div className="pulse-arena-caption"><span className="pulse-live-dot" aria-hidden="true" />
+        <span className="pulse-caption-desktop">{phaseLabel}</span><span className="pulse-caption-mobile">{mobileHint}</span></div>
       {displayId !== null && (picking || defending || shooting) && <div className="pulse-goal-legend"><i aria-hidden="true" />{t.validLanes}</div>}
       <div className="pulse-goal-wrap">
         <div className="pulse-goal-head">{labels.map(key => <span key={key}>{t[key]}</span>)}</div>

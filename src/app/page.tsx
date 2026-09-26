@@ -5,7 +5,6 @@ import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 import DevPreview from '@/components/DevPreview';
 import { LanguagePicker, LanguageProvider, useLanguage } from '@/components/LanguageProvider';
-import { pulseAdapter } from '@/lib/games/pulse-adapter';
 
 function LocalizedGame() {
   const { t } = useLanguage();
@@ -24,8 +23,6 @@ function LocalizedGame() {
     window.history.pushState(null, '', url);
     setPreview(show);
   }
-  // The SDK reads this presentational hint from our registered adapter on render.
-  pulseAdapter.controlsHint = t.controlsHint;
   if (process.env.NODE_ENV === 'development' && preview)
     return <DevPreview onExit={() => showPreview(false)} />;
   return <>

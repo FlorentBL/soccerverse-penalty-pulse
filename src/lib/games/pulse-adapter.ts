@@ -14,7 +14,7 @@ export const pulseAdapter: GameAdapter = {
   makeOpenChannel: () => new PulseChannel(useChannelStore.getState().channelId),
   Renderer: PulseBoard,
   useInput: usePulseInput,
-  controlsHint: 'Place your keeper in the goal. Aim at one of nine targets.',
+  controlsHint: '', // The board supplies phase-specific mobile instructions; the SDK footer would cover them.
   stallGraceMs: 120_000,
   presentation: { aspectRatio: 1.05, minViewport: { width: 320, height: 400 }, immersive: 'preferred', fullFrameOnTouch: true },
 };
