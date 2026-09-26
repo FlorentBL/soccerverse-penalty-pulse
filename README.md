@@ -4,12 +4,12 @@ A two-player Soccerverse penalty shootout for XAYA Arcade. Each match is free, l
 
 ## Play
 
-1. The striker chooses an unused Soccerverse player. The defender sees that player and their two effective shooting lanes.
-2. The defender **chooses where their goalkeeper dives**: left, centre or right. The choice is committed with SHA-256 and stays hidden until after the shot.
-3. The striker chooses where to shoot. Matching the keeper's lane is a save. Another lane scores only if it is one of the selected player's two effective lanes; otherwise the ball goes wide.
+1. The striker chooses an unused Soccerverse player. Their **Pulse precision** gives them 3, 5 or 7 reliable targets in a nine-zone goal.
+2. The defender **chooses exactly where their goalkeeper dives** among those nine zones. The choice is committed with SHA-256 and stays hidden until after the shot.
+3. The striker chooses one of the nine targets. Matching the keeper's spot is a save. Another spot scores only if it is a reliable target for that player; otherwise the ball goes wide.
 4. The defender reveals the dive. Players alternate shooting. After six kicks, the higher score wins; equal scores draw. A timed-out active player forfeits.
 
-The two effective lanes are Arcade game traits calculated deterministically from the Soccerverse player ID. They are **not Soccerverse ratings**. Any player ID in the pinned official datapack can be chosen; ownership of a Soccerverse player is **not verified or required**. This is an identity and player-selection link to Soccerverse, not an ownership-gated integration. No live Soccerverse API is called during a match.
+Pulse precision and its exact target pattern are Arcade game traits calculated deterministically from the Soccerverse player ID (`3 + 2 × (ID mod 3)` targets). More reliable targets give a stronger shooter more ways to beat the goalkeeper's guess. These traits are **not Soccerverse ratings**. Soccerverse publishes a real `rating_shooting` in its game-state API, but the pinned name/ID datapack used here does not contain it. Using that official rating in consensus rules would require a complete, versioned ratings snapshot in both C++ WASM and the UI. Any player ID in the pinned datapack can be chosen; ownership is **not verified or required**. No live Soccerverse API is called during a match.
 
 ## Try locally
 
@@ -30,7 +30,7 @@ npm run typecheck:test
 npm run verify:css
 bash blob/check-blob.sh --strict
 npm run build
-NEXT_PUBLIC_GAME_ID=xarc bash scripts/build-export.sh --bundle
+FRAME_ANCESTORS=https://test-arcade.xaya.io NEXT_PUBLIC_GAME_ID=xarc bash scripts/build-export.sh --bundle
 ```
 
 `xarc` is the playground move namespace documented in the official skill. A different target Arcade may require its own namespace. The static export writes `dist/bundle.tar.gz` and its SHA-256 sidecar. Arcade games-host supplies runtime endpoints and framing settings; a standalone static host needs correctly configured endpoints and embedding headers. Rebuild the pinned WASM with Docker using `bash blob/build-blob.sh`. `scripts/generate-soccerverse-snapshot.py` regenerates the player data from the exact official datapack SHA-256 recorded in [data/SOURCE.md](data/SOURCE.md).

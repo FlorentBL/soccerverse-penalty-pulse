@@ -1,5 +1,5 @@
 import type { PulseInput } from './channel';
-import { primaryLane, secondaryLane, type PulseState } from './codec';
+import { scoringTargets, type PulseState } from './codec';
 
 /** Local UI rehearsal only. Real matches are judged by rules.wasm through the SDK. */
 export function initialPreviewState(): PulseState {
@@ -23,17 +23,16 @@ export function advancePreview(
       keeperLane: null,
     };
   }
-  if (state.phase === 1 && input.type === 'guard' && input.lane >= 0 && input.lane <= 2) {
+  if (state.phase === 1 && input.type === 'guard' && Number.isInteger(input.lane) && input.lane >= 0 && input.lane <= 8) {
     return {
       state: { ...state, phase: 2, turn: shooter, turnCount: state.turnCount + 1 },
       keeperLane: input.lane,
     };
   }
   if (state.phase === 2 && input.type === 'shot' && keeperLane !== null &&
-      input.lane >= 0 && input.lane <= 2) {
+      Number.isInteger(input.lane) && input.lane >= 0 && input.lane <= 8) {
     const result = input.lane === keeperLane ? 2 :
-      input.lane === primaryLane(state.pendingPlayer) ||
-      input.lane === secondaryLane(state.pendingPlayer) ? 1 : 3;
+      scoringTargets(state.pendingPlayer).includes(input.lane) ? 1 : 3;
     const goals: [number, number] = [...state.goals];
     if (result === 1) goals[shooter]++;
     const used: [number[], number[]] = [state.used[0].slice(), state.used[1].slice()];

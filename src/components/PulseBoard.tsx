@@ -5,12 +5,13 @@ import { useChannelStore } from '@xayaarcade/sdk';
 import { useLanguage } from './LanguageProvider';
 import { submitPulseInput } from '@/hooks/use-pulse-input';
 import type { PulseState } from '@/lib/pulse/codec';
-import { primaryLane, secondaryLane } from '@/lib/pulse/codec';
+import { scoringTargetCount, scoringTargets } from '@/lib/pulse/codec';
 import { featuredPlayers, findPlayerName } from '@/lib/pulse/players';
 import { keeperChoice, type PulseInput } from '@/lib/pulse/channel';
 import './PulseBoard.css';
 
 const labels = ['left', 'centre', 'right'] as const;
+const heights = ['high', 'middle', 'low'] as const;
 interface PulseBoardProps {
   localPlayerIndex: number;
   previewState?: PulseState;
@@ -89,7 +90,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
     finished ? game.winner === -2 ? t.draw : preview ? `P${game.winner + 1} ${t.wins}` : game.winner === localPlayerIndex ? t.yourWin : t.rivalWin :
     game.phase === 3 ? t.revealPrompt : picking ? t.pickPrompt : defending ? t.guardPrompt : shooting ? t.shotPrompt : t.waiting;
   const displayId = defending || shooting ? game?.pendingPlayer ?? null : playerId;
-  const allowed = displayId === null ? [] : [primaryLane(displayId), secondaryLane(displayId)];
+  const allowed = displayId === null ? [] : scoringTargets(displayId);
   const roleLabel = defending ? t.keeper : picking || shooting ? t.striker : t.result;
   const phaseLabel = preview && (picking || defending || shooting) ? `P${localPlayerIndex + 1} / ${roleLabel}` : roleLabel;
 
@@ -108,21 +109,28 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
     </div>
     <section className="pulse-arena" aria-label="Penalty goal">
       <div className="pulse-arena-caption"><span className="pulse-live-dot" aria-hidden="true" />{phaseLabel}</div>
-      <div className="pulse-floodlight left-light" /><div className="pulse-floodlight right-light" />
-      <div className="pulse-goal">
-        {labels.map((key, lane) => {
+      {displayId !== null && (picking || defending || shooting) && <div className="pulse-goal-legend"><i aria-hidden="true" />{t.validLanes}</div>}
+      <div className="pulse-goal-wrap">
+        <div className="pulse-goal-head">{labels.map(key => <span key={key}>{t[key]}</span>)}</div>
+        <div className="pulse-goal">
+        {Array.from({ length: 9 }, (_, lane) => {
+          const key = labels[lane % 3];
+          const height = heights[Math.floor(lane / 3)];
           const chosen = defending ? guard === lane : shooting ? aim === lane : false;
           const last = finished || game?.phase === 0;
-          const marker = last && game?.lastGuard === lane ? 'keeper' : last && game?.lastShot === lane ? 'ball' : '';
-          return <button type="button" key={key} className={'pulse-zone ' + (chosen ? 'selected ' : '') + marker}
+          const keeperHere = last && game?.lastGuard === lane;
+          const ballHere = last && game?.lastShot === lane;
+          const marker = keeperHere ? 'keeper' : ballHere ? game?.lastResult === 3 ? 'missed' : 'ball' : '';
+          return <button type="button" key={lane} className={'pulse-zone ' + (chosen ? 'selected ' : '') + (allowed.includes(lane) && (picking || defending || shooting) ? 'scoring ' : '') + marker}
             disabled={(!defending && !shooting) || busy || (defending && lockedGuard !== null && lockedGuard !== lane)}
-            aria-label={t[key]} aria-pressed={chosen}
+            aria-label={`${t[height]} ${t[key]}`} aria-pressed={chosen}
             onClick={() => defending ? setGuard(lane) : setAim(lane)}>
             <span className="pulse-zone-no" aria-hidden="true">0{lane + 1}</span>
-            <span className="pulse-zone-target" aria-hidden="true">{marker === 'keeper' ? 'GK' : marker === 'ball' ? '●' : chosen ? '✦' : '+'}</span>
-            <span className="pulse-zone-label" aria-hidden="true">{t[key]}</span>
+            <span className="pulse-zone-target" aria-hidden="true">{keeperHere ? 'GK' : ballHere ? '●' : chosen ? '✦' : '+'}</span>
+            {keeperHere && ballHere && <span className="pulse-zone-mark" aria-hidden="true">●</span>}
           </button>;
         })}
+        </div>
       </div>
       <div className="pulse-spot"><span className="pulse-ball" aria-hidden="true" /></div>
       <div className="pulse-pitch-arc" />
@@ -137,11 +145,12 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
           onChange={e => setLookup(e.target.value)} placeholder="1100" />
           <button type="button" onClick={() => void selectPlayer(Number(lookup))}>{t.search}</button></div>
         <div className="pulse-featured"><small>{t.featured}</small><div>{featuredPlayers.map((p, index) =>
-          <button type="button" key={p.id} aria-label={p.name} disabled={used.includes(p.id)} className={playerId === p.id ? 'active' : ''}
-            onClick={() => void selectPlayer(p.id)}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{p.name}</button>)}</div></div>
+          <button type="button" key={p.id} disabled={used.includes(p.id)} className={playerId === p.id ? 'active' : ''}
+            onClick={() => void selectPlayer(p.id)}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{p.name}<b>{scoringTargetCount(p.id)}/9</b></button>)}</div></div>
       </div>}
       {displayId !== null && (picking || defending || shooting) && <div className="pulse-player"><div className="pulse-player-monogram" aria-hidden="true">SV</div><div className="pulse-player-info"><strong>{playerName || '#' + displayId}</strong><span>#{displayId}</span>
-        <small>{t.validLanes}: <b>{allowed.map(x => t[labels[x]]).join('  +  ')}</b></small></div></div>}
+        <small>{t.pulsePrecision}: <b>{allowed.length}/9</b> <em>· {t.arcadeTrait}</em></small>
+        <div className="pulse-skill-bars" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i} className={i < allowed.length ? 'active' : ''} />)}</div></div></div>}
       {(picking || defending || shooting) && <button type="button" className="pulse-action" disabled={busy || picking && playerId === null || defending && guard === null || shooting && aim === null}
         onClick={() => void send()}>{picking ? t.confirmPlayer : defending ? t.dive : t.shoot}<span aria-hidden="true">↗</span></button>}
       {!!game?.kick && <div className="pulse-last"><span>{t.result}</span><strong>{result}</strong></div>}

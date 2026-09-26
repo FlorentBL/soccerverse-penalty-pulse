@@ -14,7 +14,7 @@ export const pulseAdapter: GameAdapter = {
   makeOpenChannel: () => new PulseChannel(useChannelStore.getState().channelId),
   Renderer: PulseBoard,
   useInput: usePulseInput,
-  controlsHint: 'Choose your keeper lane. Shoot with a Soccerverse player.',
+  controlsHint: 'Place your keeper in the goal. Aim at one of nine targets.',
   stallGraceMs: 120_000,
   presentation: { aspectRatio: 1.05, minViewport: { width: 320, height: 400 }, immersive: 'preferred', fullFrameOnTouch: true },
 };

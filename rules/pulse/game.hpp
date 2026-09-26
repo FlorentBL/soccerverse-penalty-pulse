@@ -29,8 +29,8 @@ struct State {
 };
 
 bool playerExists(std::uint32_t id);
-std::uint8_t primaryLane(std::uint32_t id);
-std::uint8_t secondaryLane(std::uint32_t id);
+std::uint8_t scoringTargetCount(std::uint32_t id);
+bool isScoringTarget(std::uint32_t id, std::uint8_t target);
 bool initial(std::uint8_t participants, const std::uint8_t* cfg, std::size_t cfgLength, State& out);
 bool decode(const std::uint8_t* bytes, std::size_t length, std::uint8_t participants, State& out);
 std::array<std::uint8_t, STATE_SIZE> encode(const State& state);

@@ -31,8 +31,13 @@ export function decodeState(bytes: Uint8Array, participants: number): PulseState
   };
 }
 
-export function primaryLane(id: number): number { return id % 3; }
-export function secondaryLane(id: number): number { return (primaryLane(id) + 1 + Math.floor(id / 3) % 2) % 3; }
+export function scoringTargetCount(id: number): number { return 3 + 2 * (id % 3); }
+export function scoringTargets(id: number): number[] {
+  const steps = [1, 2, 4, 5, 7, 8];
+  const start = id % 9;
+  const step = steps[Math.floor(id / 9) % 6];
+  return Array.from({ length: scoringTargetCount(id) }, (_, i) => (start + i * step) % 9);
+}
 export function encodePick(id: number): Uint8Array {
   const b = new Uint8Array(5);
   b[0] = 4;

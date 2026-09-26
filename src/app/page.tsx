@@ -38,6 +38,7 @@ function LocalizedGame() {
 export default function Home() {
   const shellStyle = {
     '--pulse-stadium': `url("${process.env.NEXT_PUBLIC_BASE_PATH || ''}/art/stadium-night.jpg")`,
+    '--pulse-arena-stadium': `url("${process.env.NEXT_PUBLIC_BASE_PATH || ''}/art/stadium-arena.jpg")`,
   } as CSSProperties;
   return <LanguageProvider><div className="pulse-app-shell" style={shellStyle}><LanguagePicker /><LocalizedGame /></div></LanguageProvider>;
 }

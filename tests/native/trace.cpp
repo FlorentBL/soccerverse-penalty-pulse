@@ -25,8 +25,9 @@ int main() {
       std::array<std::uint8_t, 5> pick = {4, std::uint8_t(ids[k]), std::uint8_t(ids[k] >> 8),
         std::uint8_t(ids[k] >> 16), std::uint8_t(ids[k] >> 24)};
       step(s, pick);
-      const auto shotLane = primaryLane(ids[k]);
-      const auto guard = std::uint8_t(mode == 1 || k % 2 ? shotLane : (shotLane + 1) % 3);
+      std::uint8_t shotLane = 0;
+      while (!isScoringTarget(ids[k], shotLane)) ++shotLane;
+      const auto guard = std::uint8_t(mode == 1 || k % 2 ? shotLane : (shotLane + 1) % 9);
       std::array<std::uint8_t, 32> salt{};
       for (int i = 0; i < 32; ++i) salt[i] = std::uint8_t(k * 11 + i);
       std::uint8_t pre[34] = {std::uint8_t(k), guard};

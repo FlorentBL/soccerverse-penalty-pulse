@@ -23,9 +23,14 @@ bool allZero(const std::array<std::uint8_t, 32>& b) {
 bool playerExists(std::uint32_t id) {
   return id && id / 8 < sizeof(playerBits) && (playerBits[id / 8] & (1u << (id % 8)));
 }
-std::uint8_t primaryLane(std::uint32_t id) { return std::uint8_t(id % 3); }
-std::uint8_t secondaryLane(std::uint32_t id) {
-  return std::uint8_t((primaryLane(id) + 1 + (id / 3) % 2) % 3);
+std::uint8_t scoringTargetCount(std::uint32_t id) { return std::uint8_t(3 + 2 * (id % 3)); }
+bool isScoringTarget(std::uint32_t id, std::uint8_t target) {
+  constexpr std::uint8_t steps[6] = {1, 2, 4, 5, 7, 8};
+  const auto start = id % 9;
+  const auto step = steps[(id / 9) % 6];
+  for (std::uint8_t i = 0; i < scoringTargetCount(id); ++i)
+    if ((start + i * step) % 9 == target) return true;
+  return false;
 }
 
 bool initial(std::uint8_t participants, const std::uint8_t*, std::size_t cfgLength, State& out) {
@@ -102,11 +107,11 @@ bool valid(const State& s) {
   } else if (s.phase == COMMIT || s.phase == SHOOT || s.phase == REVEAL) {
     if ((s.phase == COMMIT ? !allZero(s.commitment) : allZero(s.commitment)) ||
         !playerExists(s.pendingPlayer) ||
-        (s.phase == REVEAL ? s.pendingLane > 2 : s.pendingLane != 255)) return false;
+        (s.phase == REVEAL ? s.pendingLane > 8 : s.pendingLane != 255)) return false;
     for (int i = 0; i < 3; ++i) if (s.used[s.kick % 2][i] == s.pendingPlayer) return false;
   }
   if (s.kick == 0 && (s.lastResult != NONE || s.lastPlayer || s.lastShot != 255 || s.lastGuard != 255)) return false;
-  if (s.kick > 0 && (s.lastResult == NONE || !playerExists(s.lastPlayer) || s.lastShot > 2 || s.lastGuard > 2)) return false;
+  if (s.kick > 0 && (s.lastResult == NONE || !playerExists(s.lastPlayer) || s.lastShot > 8 || s.lastGuard > 8)) return false;
   return true;
 }
 
@@ -130,12 +135,12 @@ bool apply(State& s, const std::uint8_t* m, std::size_t n) {
     next.phase = SHOOT;
     next.turn = s.kick % 2;
   } else if (s.phase == SHOOT) {
-    if (n != 2 || m[0] != 2 || m[1] > 2) return false;
+    if (n != 2 || m[0] != 2 || m[1] > 8) return false;
     next.pendingLane = m[1];
     next.phase = REVEAL;
     next.turn = 1 - s.kick % 2;
   } else {
-    if (n != 34 || m[0] != 3 || m[1] > 2) return false;
+    if (n != 34 || m[0] != 3 || m[1] > 8) return false;
     std::uint8_t payload[34] = {s.kick, m[1]};
     std::memcpy(payload + 2, m + 2, 32);
     std::uint8_t digest[32];
@@ -145,8 +150,7 @@ bool apply(State& s, const std::uint8_t* m, std::size_t n) {
     next.lastPlayer = s.pendingPlayer; next.lastShot = s.pendingLane;
     next.lastGuard = m[1];
     next.lastResult = m[1] == s.pendingLane ? SAVED :
-      (s.pendingLane == primaryLane(s.pendingPlayer) ||
-       s.pendingLane == secondaryLane(s.pendingPlayer) ? GOAL : MISSED);
+      (isScoringTarget(s.pendingPlayer, s.pendingLane) ? GOAL : MISSED);
     if (next.lastResult == GOAL) ++next.goals[seat];
     next.used[seat][s.kick / 2] = s.pendingPlayer;
     next.commitment.fill(0);

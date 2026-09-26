@@ -8,7 +8,7 @@
 | Config suffix | none (`null` in submission JSON; no bytes) |
 | Full cfg delivered to `arcade_initial_state` | 0 bytes |
 | Rules blob | `blob/rules.wasm` |
-| Rules SHA-256 | `e2a10653e15c7168457740ee434be3c21f537dd7a5d9ae1696df962e66e33f18` |
+| Rules SHA-256 | `1f28f0bfdba8995468b28b4951fe73cc26a8f812729ba2b68dbd7da3ec70ffe9` |
 | State encoding | version 1, fixed 78 bytes; see `rules/pulse/game.cpp` and `src/lib/pulse/codec.ts` |
 | Turns | 24 signed moves, 4 per kick; 6 kicks total |
 | Timeout | active seat forfeits; opponent wins |

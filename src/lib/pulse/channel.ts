@@ -13,7 +13,7 @@ function readSecret(channelId: bigint | null, seat: number, kick: number): Secre
     const value = localStorage.getItem(key(channelId, seat, kick));
     if (!value) return null;
     const secret = JSON.parse(value) as Secret;
-    if (!Number.isInteger(secret.lane) || secret.lane < 0 || secret.lane > 2 ||
+    if (!Number.isInteger(secret.lane) || secret.lane < 0 || secret.lane > 8 ||
         !Array.isArray(secret.salt) || secret.salt.length !== 32 ||
         !secret.salt.every(n => Number.isInteger(n) && n >= 0 && n < 256)) return null;
     return secret;
@@ -33,7 +33,7 @@ export class PulseChannel implements ArcadeChannel {
     if ((p.type === 'guard' || p.type === 'shot' || p.type === 'pick') &&
         Number.isInteger(p.kick) && p.kick >= 0 && p.kick < 6 &&
         (p.type === 'pick' ? Number.isInteger(p.playerId) && p.playerId > 0 && p.playerId <= 523571 :
-          Number.isInteger(p.lane) && p.lane >= 0 && p.lane <= 2))
+          Number.isInteger(p.lane) && p.lane >= 0 && p.lane <= 8))
       this.pending = p;
   }
   async maybeAutoMove(state: ParsedBoardState): Promise<BoardMoveBytes | null> {

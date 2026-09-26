@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { primaryLane } from '@/lib/pulse/codec';
+import { scoringTargets } from '@/lib/pulse/codec';
 import { advancePreview, initialPreviewState } from '@/lib/pulse/dev-preview';
 
 describe('wallet-free local preview', () => {
@@ -14,13 +14,14 @@ describe('wallet-free local preview', () => {
       state = pick!.state;
       guard = pick!.keeperLane;
 
-      const dive = advancePreview(state, { type: 'guard', kick, lane: kick === 1 ? primaryLane(players[kick]) : (primaryLane(players[kick]) + 1) % 3 }, guard);
+      const target = scoringTargets(players[kick])[0];
+      const dive = advancePreview(state, { type: 'guard', kick, lane: kick === 1 ? target : (target + 1) % 9 }, guard);
       expect(dive?.state.phase).toBe(2);
       expect(dive?.state.turn).toBe(kick % 2);
       state = dive!.state;
       guard = dive!.keeperLane;
 
-      const shot = advancePreview(state, { type: 'shot', kick, lane: primaryLane(players[kick]) }, guard);
+      const shot = advancePreview(state, { type: 'shot', kick, lane: target }, guard);
       expect(shot?.state.lastResult).toBe(kick === 1 ? 2 : 1);
       state = shot!.state;
       guard = shot!.keeperLane;
@@ -43,5 +44,11 @@ describe('wallet-free local preview', () => {
     state = advancePreview(state, { type: 'shot', kick: 1, lane: 2 }, 1)!.state;
     expect(advancePreview(state, { type: 'pick', kick: 2, playerId: 1100 }, null)).toBeNull();
     expect(advancePreview(state, { type: 'pick', kick: 3, playerId: 154 }, null)).toBeNull();
+  });
+  it('gives stronger Arcade shooters more reliable targets', () => {
+    expect(scoringTargets(3)).toHaveLength(3);
+    expect(scoringTargets(1)).toHaveLength(5);
+    expect(scoringTargets(2)).toHaveLength(7);
+    expect(new Set(scoringTargets(2)).size).toBe(7);
   });
 });
