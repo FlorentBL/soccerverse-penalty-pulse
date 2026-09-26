@@ -20,6 +20,8 @@ Run `python3 scripts/measure-balance.py` with SciPy. Among the pinned players, t
 
 Run `npm ci && npm run dev`, then open `http://localhost:3001/?preview=1` or select **Preview without wallet**. The full React board runs a local hotseat game without a wallet. It has the same selection, zone, save and scoring logic as the WASM judge; the online match remains judged by `blob/rules.wasm` through the official XAYA Arcade SDK. The interface defaults to English, with French, Italian, Spanish and Portuguese available. For a phone on the same Wi-Fi, open `http://<machine-LAN-IP>:3001/?preview=1` while the dev server is running.
 
+The **Rules** button beneath the kick counter explains the full flow and rating tables in the selected language. It is available during both the local preview and online play.
+
 The first player's pair of picks and each goalkeeper choice use local 32-byte salts stored per channel, seat and kick. Keep the same browser through reveal; losing a secret before reveal can lead to a timeout. The hotseat demo skips cryptographic handoff and is for UI rehearsal only. The original static HTML in `prototype/` is an archived early prototype and does not implement the current rules.
 
 ## Build and submission

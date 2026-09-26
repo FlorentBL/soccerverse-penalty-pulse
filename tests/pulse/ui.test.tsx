@@ -23,6 +23,18 @@ function setup() {
 }
 afterEach(() => { submit.mockClear(); act(() => useChannelStore.setState({ boardState: null })); vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe('Penalty Pulse touch flow', () => {
+  it('explains the rating bands and hidden goalkeeper choice from the score', () => {
+    useChannelStore.getState().updateFromBoardState(board(0, 0));
+    render(<LanguageProvider><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
+    fireEvent.click(screen.getByRole('button', { name: /rules/i }));
+    const dialog = screen.getByRole('dialog', { name: 'HOW TO PLAY' });
+    expect(dialog).toHaveTextContent('Both players see the exact same green zones');
+    expect(dialog).toHaveTextContent('2 adjacent zones');
+    expect(dialog).toHaveTextContent('2 zones anywhere');
+    expect(dialog).toHaveTextContent('Against a shooter with only three green zones');
+    fireEvent.click(screen.getByRole('button', { name: 'Close rules' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
   it('offers three rating bands in each role and locks a distinct duo', async () => {
     setup();
     useChannelStore.getState().updateFromBoardState(board(1, 1));

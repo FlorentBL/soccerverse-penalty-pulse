@@ -9,6 +9,7 @@ import { canReach, goalkeeperRating, ratingTier, scoringTargetCount, scoringTarg
 import { featuredPlayers, findPlayerName } from '@/lib/pulse/players';
 import { keeperChoice, type PulseInput } from '@/lib/pulse/channel';
 import KeeperFigure from './KeeperFigure';
+import PulseRules, { rulesCopy } from './PulseRules';
 import './PulseBoard.css';
 
 const labels = ['left', 'centre', 'right'] as const;
@@ -25,7 +26,7 @@ interface ShotReplay {
   style: CSSProperties;
 }
 export default function PulseBoard({ localPlayerIndex, previewState, onPreviewInput }: PulseBoardProps) {
-  const { t } = useLanguage();
+  const { locale, t } = useLanguage();
   const raw = useChannelStore(s => s.boardState) as PulseState | null;
   const channelId = useChannelStore(s => s.channelId);
   const candidate = previewState ?? raw;
@@ -42,6 +43,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const [lookupKeeper, setLookupKeeper] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [rulesOpen, setRulesOpen] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const arenaRef = useRef<HTMLElement>(null);
   const seenKick = useRef<number | null>(null);
@@ -203,6 +205,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       <div className={'pulse-score-side ' + (!preview && localPlayerIndex === 0 ? 'mine' : '')}><small>{preview ? 'P1' : localPlayerIndex === 0 ? t.you : t.rival}</small><strong>{shownGoals[0]}</strong></div>
       <div className="pulse-round"><span>{extra ? t.suddenDeath : t.round + ' ' + regulationKick} <em>{extra ? t.extraRound + ' ' + extraRound : t.of + ' 6'}</em></span>
         <div className="pulse-dots">{Array.from({ length: progressTotal }, (_, i) => <i key={i} className={i < progressDone ? 'done' : !finished && i === progressDone ? 'current' : ''} />)}</div>
+        <button type="button" className="pulse-rules-trigger" onClick={() => setRulesOpen(true)}>{rulesCopy[locale].button} <span aria-hidden="true">↗</span></button>
       </div>
       <div className={'pulse-score-side pulse-score-away ' + (!preview && localPlayerIndex === 1 ? 'mine' : '')}><small>{preview ? 'P2' : localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{shownGoals[1]}</strong></div>
     </div>
@@ -290,5 +293,6 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       {error && <p role="alert" className="pulse-error">{error}</p>}
     </section>
     <footer>{t.snapshot}</footer>
+    {rulesOpen && <PulseRules onClose={() => setRulesOpen(false)} />}
   </main>;
 }
