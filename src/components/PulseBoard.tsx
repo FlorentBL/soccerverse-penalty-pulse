@@ -8,6 +8,7 @@ import type { PulseState } from '@/lib/pulse/codec';
 import { scoringTargetCount, scoringTargets } from '@/lib/pulse/codec';
 import { featuredPlayers, findPlayerName } from '@/lib/pulse/players';
 import { keeperChoice, type PulseInput } from '@/lib/pulse/channel';
+import KeeperFigure from './KeeperFigure';
 import './PulseBoard.css';
 
 const labels = ['left', 'centre', 'right'] as const;
@@ -93,6 +94,8 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const allowed = displayId === null ? [] : scoringTargets(displayId);
   const roleLabel = defending ? t.keeper : picking || shooting ? t.striker : t.result;
   const phaseLabel = preview && (picking || defending || shooting) ? `P${localPlayerIndex + 1} / ${roleLabel}` : roleLabel;
+  const lastKeeper = game && game.kick > 0 && (finished || game.phase === 0 && playerId === null) && game.lastGuard <= 8 ? game.lastGuard : null;
+  const keeperSpot = defending ? guard ?? 4 : lastKeeper;
 
   return <main className="pulse-root">
     <header className="pulse-top">
@@ -126,10 +129,11 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
             aria-label={`${t[height]} ${t[key]}`} aria-pressed={chosen}
             onClick={() => defending ? setGuard(lane) : setAim(lane)}>
             <span className="pulse-zone-no" aria-hidden="true">0{lane + 1}</span>
-            <span className="pulse-zone-target" aria-hidden="true">{keeperHere ? 'GK' : ballHere ? '●' : chosen ? '✦' : '+'}</span>
-            {keeperHere && ballHere && <span className="pulse-zone-mark" aria-hidden="true">●</span>}
+            <span className="pulse-zone-target" aria-hidden="true">{ballHere && !keeperHere ? '●' : chosen ? '✦' : '+'}</span>
           </button>;
         })}
+        {keeperSpot !== null && <KeeperFigure lane={keeperSpot} ready={defending && guard === null}
+          caught={lastKeeper !== null && game?.lastResult === 2 && game.lastShot === lastKeeper} />}
         </div>
       </div>
       <div className="pulse-spot"><span className="pulse-ball" aria-hidden="true" /></div>

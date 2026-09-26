@@ -25,7 +25,7 @@
 - WASM path: `blob/rules.wasm`
 - WASM SHA-256: `1f28f0bfdba8995468b28b4951fe73cc26a8f812729ba2b68dbd7da3ec70ffe9`
 - Bundle path: `dist/bundle.tar.gz` (generated locally, ignored by Git)
-- Local playground bundle SHA-256: `f77cc6476aa739ec406cafbd711747a810142b1085c73337b519494baadf8ae2` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`); rebuild after any source change.
+- Local playground bundle SHA-256: `a737798eb6fdb2d1df733fe6d7f075abde1d0263299248603d2a207683689994` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`); rebuild after any source change.
 - Source datapack SHA-256: `d8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e`
 - SDK: vendored `@xayaarcade/sdk` 0.20.5; version checked against the local platform example snapshot, release commit provenance still needs a real platform Git checkout.
 
@@ -35,7 +35,7 @@
 - WASM judge replay of both traces, byte for byte, plus malformed cfg/state/move, invalid reveal, and timeout checks.
 - React component tests for the goalkeeper, player picker and shot phases; TypeScript checks; production and static export builds; CSS verification; WASM structural/ABI check.
 - Browser check of the hotseat prototype: pick player → handoff → choose goalkeeper target → handoff → shoot into same target → saved result.
-- Desktop, 320 px and 390 px mobile layout inspection of the wallet-free React preview. On 390 px, six kicks completed with a winner, the restart worked, and the French language switch was checked. The full live channel was **not** exercised locally against two wallet identities.
+- Desktop, 320 px and 390 px mobile layout inspection of the wallet-free React preview. All nine keeper placements were checked at those widths; the keeper was hidden from the striker and revealed with the result. On 390 px, six kicks completed with a winner, the restart worked, and the French language switch was checked. The full live channel was **not** exercised locally against two wallet identities.
 
 ## Required before submission
 

@@ -57,15 +57,20 @@
 .pulse-zone.scoring .pulse-zone-target { border-color: #ddffab; box-shadow: 0 0 0 5px #e4ffa72d, 0 0 21px #baf3728c; }
 .pulse-zone.keeper { background: #d9fb747a; }.pulse-zone.ball { background: #f8fff475; }
 .pulse-zone.missed { background: #ec886480; }
+.pulse-keeper { position: absolute; z-index: 4; width: clamp(66px, 6.5vw, 94px); aspect-ratio: 100 / 108; transform: translate(-50%, -50%) rotate(var(--keeper-lean, 0deg)); pointer-events: none; transition: left .24s ease, top .24s ease, transform .24s ease, opacity .2s ease; }
+.pulse-keeper-col-0 { --keeper-lean: -13deg; }.pulse-keeper-col-2 { --keeper-lean: 13deg; }
+.pulse-keeper-row-0 { margin-top: -3px; }.pulse-keeper-row-2 { margin-top: 3px; }
+.pulse-keeper-ready { opacity: .72; filter: saturate(.74); }
+.pulse-keeper-aura { position: absolute; inset: 13% -10% -3%; border-radius: 50%; background: radial-gradient(circle, #e3ffa05e, #c5fa7740 36%, transparent 69%); filter: blur(6px); }
+.pulse-keeper svg { position: relative; display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 7px 4px #001510d9) drop-shadow(0 0 5px #ffe3ae9a); }
 .pulse-zone:disabled { opacity: 1; }
 .pulse-zone-no { position: absolute; left: 10px; top: 7px; color: #d1eed2b1; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
 .pulse-zone-target { width: clamp(26px, 3.7vw, 45px); height: clamp(26px, 3.7vw, 45px); display: grid; place-items: center; border: 1px solid #eeffecd1; border-radius: 50%; box-shadow: 0 0 0 5px #ecffe923; color: #faffed; font-size: clamp(15px, 2vw, 23px); font-weight: 650; line-height: 1; }
 .pulse-zone.keeper .pulse-zone-target { font-size: 11px; font-weight: 950; }
-.pulse-zone-mark { position: absolute; right: 7px; top: 5px; color: #faffdd; font-size: 9px; font-weight: 950; letter-spacing: .02em; }
-.pulse-spot { position: absolute; z-index: 2; left: 50%; bottom: 1%; width: 86px; height: 86px; transform: translateX(-50%); display: grid; place-items: center; border: 2px solid #e4ffe4b8; border-radius: 50%; }
+.pulse-spot { position: absolute; z-index: 2; left: 50%; bottom: 1%; width: 86px; height: 86px; transform: translateX(-50%); display: grid; place-items: center; border: 2px solid #e4ffe4b8; border-radius: 50%; pointer-events: none; }
 .pulse-ball { position: relative; display: block; width: 34px; height: 34px; border: 2px solid #f9fff4; border-radius: 50%; background: radial-gradient(circle at 30% 26%, #fff 0, #f2f7e8 40%, #cbd8c8 100%); box-shadow: 0 8px 13px #001a16ad; }
 .pulse-ball::after { content: ''; position: absolute; top: 9px; left: 9px; width: 13px; height: 12px; background: #244438; clip-path: polygon(50% 0,100% 38%,81% 100%,19% 100%,0 38%); }
-.pulse-pitch-arc { position: absolute; bottom: -86px; left: 24%; right: 24%; height: 130px; border: 2px solid #e8ffda6d; border-radius: 50% 50% 0 0; }
+.pulse-pitch-arc { position: absolute; bottom: -86px; left: 24%; right: 24%; height: 130px; border: 2px solid #e8ffda6d; border-radius: 50% 50% 0 0; pointer-events: none; }
 .pulse-pitch-line { display: none; }
 .pulse-console { grid-column: 2; display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; padding: clamp(16px, 1.4vw, 22px); border: 1px solid #d2f2bd36; background: linear-gradient(160deg, #10382beb, #061b18f7 80%); box-shadow: 0 22px 48px #0008; }
 .pulse-step { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
@@ -108,7 +113,7 @@
   .pulse-top { min-height: 55px; }.pulse-top h1 { font-size: clamp(27px, 8vw, 38px); }.pulse-brand { gap: 9px; }.pulse-brand-mark { transform: scale(.77) skew(-13deg); transform-origin: left center; width: 24px; }
   .pulse-score { min-height: 76px; }.pulse-score-side { flex-direction: column; gap: 2px; align-items: flex-start; }.pulse-score-away { align-items: flex-end; }
   .pulse-score-side strong { font-size: 44px; }.pulse-score-side small { font-size: 9px; min-width: 0; }.pulse-round { font-size: 10px; }.pulse-round em { font-size: 9px; }.pulse-dots i { width: 10px; }
-  .pulse-arena { flex: none; min-height: 290px; padding: 69px 17px 0; background-position: center 56%; }.pulse-goal { height: 156px; aspect-ratio: auto; border-width: 7px; }.pulse-goal-head { font-size: 8px; letter-spacing: .13em; }.pulse-zone-target { width: 29px; height: 29px; font-size: 17px; }.pulse-spot { width: 62px; height: 62px; bottom: 4%; }.pulse-ball { width: 26px; height: 26px; }.pulse-ball::after { width: 10px; height: 10px; top: 7px; left: 7px; }
+  .pulse-arena { flex: none; min-height: 290px; padding: 69px 17px 0; background-position: center 56%; }.pulse-goal { height: 156px; aspect-ratio: auto; border-width: 7px; }.pulse-goal-head { font-size: 8px; letter-spacing: .13em; }.pulse-zone-target { width: 29px; height: 29px; font-size: 17px; }.pulse-keeper { width: clamp(48px, 14vw, 62px); }.pulse-spot { width: 62px; height: 62px; bottom: 4%; }.pulse-ball { width: 26px; height: 26px; }.pulse-ball::after { width: 10px; height: 10px; top: 7px; left: 7px; }
   .pulse-console { flex: none; overflow: visible; padding: 18px; gap: 15px; }.pulse-step p { font-size: 17px; }.pulse-featured > div { max-height: none; }.pulse-featured button { min-height: 39px; }.pulse-root footer { text-align: center; padding: 2px 0 12px; }
   .pulse-root:has(.pulse-picker) .pulse-arena { min-height: 257px; padding-top: 57px; }
   .pulse-root:has(.pulse-picker) .pulse-goal { height: 143px; }

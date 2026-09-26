@@ -9,6 +9,8 @@ A two-player Soccerverse penalty shootout for XAYA Arcade. Each match is free, l
 3. The striker chooses one of the nine targets. Matching the keeper's spot is a save. Another spot scores only if it is a reliable target for that player; otherwise the ball goes wide.
 4. The defender reveals the dive. Players alternate shooting. After six kicks, the higher score wins; equal scores draw. A timed-out active player forfeits.
 
+The illustrated goalkeeper moves to the defender's selected zone. It disappears from the striker's view while the dive is secret, then appears again with the resolved shot.
+
 Pulse precision and its exact target pattern are Arcade game traits calculated deterministically from the Soccerverse player ID (`3 + 2 × (ID mod 3)` targets). More reliable targets give a stronger shooter more ways to beat the goalkeeper's guess. These traits are **not Soccerverse ratings**. Soccerverse publishes a real `rating_shooting` in its game-state API, but the pinned name/ID datapack used here does not contain it. Using that official rating in consensus rules would require a complete, versioned ratings snapshot in both C++ WASM and the UI. Any player ID in the pinned datapack can be chosen; ownership is **not verified or required**. No live Soccerverse API is called during a match.
 
 ## Try locally

@@ -23,10 +23,13 @@ describe('Penalty Pulse touch flow', () => {
     expect(screen.getByText(/striker cannot see it before shooting/i)).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Erling Braut Haaland')).toBeInTheDocument());
     expect(screen.getByText('7/9')).toBeInTheDocument();
+    expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '4');
     fireEvent.click(screen.getByRole('button', { name: 'HIGH LEFT' }));
+    expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '0');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Commit dive/i })));
     expect(submit).toHaveBeenCalledWith({ type: 'guard', kick: 0, lane: 0 });
     act(() => useChannelStore.getState().updateFromBoardState(board(2, 0)));
+    expect(screen.queryByTestId('pulse-keeper')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Take shot/i })).not.toBeInTheDocument();
   });
   it('announces a Soccerverse player before the defender chooses a lane', async () => {
@@ -43,8 +46,21 @@ describe('Penalty Pulse touch flow', () => {
     useChannelStore.getState().updateFromBoardState({ ...board(2, 0), pendingPlayer: 1100 });
     render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
     await waitFor(() => expect(screen.getByText('#1100')).toBeInTheDocument());
+    expect(screen.queryByTestId('pulse-keeper')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'HIGH RIGHT' }));
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Take shot/i })));
     expect(submit).toHaveBeenCalledWith({ type: 'shot', kick: 0, lane: 2 });
+  });
+  it('shows the keeper after the result, then clears the old dive for the next striker', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ '1100': 'Erling Braut Haaland' }) })));
+    useChannelStore.getState().updateFromBoardState({
+      ...board(0, 1), kick: 1, turnCount: 4, lastResult: 2,
+      lastGuard: 8, lastShot: 8, lastPlayer: 1100,
+    });
+    render(<LanguageProvider><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
+    expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '8');
+    expect(screen.getByTestId('pulse-keeper').querySelector('.pulse-keeper-catch')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Erling Braut Haaland/ }));
+    await waitFor(() => expect(screen.queryByTestId('pulse-keeper')).not.toBeInTheDocument());
   });
 });
