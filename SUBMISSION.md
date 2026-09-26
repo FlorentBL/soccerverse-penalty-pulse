@@ -1,4 +1,4 @@
-# XAYA Arcade submission draft — do not submit yet
+# XAYA Arcade submission dossier
 
 ## Game listing
 
@@ -20,7 +20,7 @@
 ## Artifacts
 
 - Local repository: `/Users/fbl/Documents/soccerverse-penalty-pulse`
-- Remote Git URL: `https://github.com/FlorentBL/soccerverse-penalty-pulse` (private during playground testing)
+- Remote Git URL: `https://github.com/FlorentBL/soccerverse-penalty-pulse` (public; reviewers can read the exact commit)
 - Tested game commit SHA: `fe8251569a10989e856a106fc138242c516c9bab`
 - WASM path: `blob/rules.wasm`
 - WASM SHA-256: `7ba32b8d8251fa8f7a3579854574093c2b2271fe9ea1f046eb707db70873acc3`
@@ -45,9 +45,9 @@
 - Browser: the wallet-free preview was visually checked at 1440×900 and 320×640 with five distinct choices. The live two-player game on the new bundle still needs testing.
 
 
-## Required before submission
+## Live validation still needed
 
-1. Play a complete game using **two independent accounts/browser profiles** through `/play/penalty-pulse`. Check sequential shooter/keeper selection, hidden keeper commit/reveal with one and two zones, saves, goals, disabled dark shot zones, the persistent mobile result, tier exhaustion, early finish or sudden death, timeout/disconnect recovery and a mobile viewport. Record the match result. This has **not** been performed yet. An earlier user screenshot showed a live match on an older six-kick bundle, but does not validate the current ten-kick rules.
-2. Rebuild and replace the playground attachment after any further game changes; record the new artifact hashes.
-3. Make the source accessible to XAYA reviewers (publish the repository or grant them access). The playground accepts a private source URL, but it does not make the source readable to reviewers.
-4. Submit via the [official XAYA game submission form](https://github.com/xaya/arcade-submissions/issues/new?template=game-submission.yml) only after 1–3 pass. The playground preflight accepted the proposed slug and game type on its disposable chain; availability on the real Arcade is still unconfirmed.
+- Play a complete game using **two independent accounts/browser profiles** through `/play/penalty-pulse`. Check sequential shooter/keeper selection, hidden keeper commit/reveal with one and two zones, saves, goals, disabled dark shot zones, the persistent mobile result, tier exhaustion, early finish or sudden death, timeout/disconnect recovery and a mobile viewport. Record the match result. This has **not** been performed yet. An earlier user screenshot showed a live match on an older six-kick bundle, but does not validate the current ten-kick rules.
+- After any game change, rebuild and replace the playground attachment and record the new hashes.
+- Source repository is public and accessible to reviewers.
+- The public Arcade listing remains subject to XAYA review. Playground acceptance does not confirm availability on the production Arcade.
