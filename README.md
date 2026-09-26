@@ -49,7 +49,7 @@ FRAME_ANCESTORS=https://test-arcade.xaya.io NEXT_PUBLIC_GAME_ID=xarc bash script
 
 The SDK supplies the lobby, matchmaking agreement, channel and signed moves. `xarc` is the playground move namespace documented in the official skill; another target Arcade may use a different namespace. The static export writes `dist/bundle.tar.gz` and a SHA-256 sidecar. Data provenance is in [data/SOURCE.md](data/SOURCE.md), ABI values in [blob/MANIFEST.md](blob/MANIFEST.md), and the candidate submission in [SUBMISSION.md](SUBMISSION.md).
 
-Free play is the only requested mode. WCHI stakes are a separate future operator discussion; no configurable creator fee on the GSP is assumed. The game is attached to the [disposable XAYA playground](https://test-arcade.xaya.io/play/penalty-pulse) for testing. **No public Arcade submission has been made.** A successful two-player playground match and reviewer access to the currently private source repository remain required.
+Free play is the only requested mode. WCHI stakes are a separate future operator discussion; no configurable creator fee on the GSP is assumed. The game is attached to the [disposable XAYA playground](https://test-arcade.xaya.io/play/penalty-pulse) for testing. A [public listing request](https://github.com/xaya/arcade-submissions/issues/1) has been filed; XAYA review is pending. The source repository is public. A complete live two-account match on the current bundle is still needed and is disclosed in the request.
 
 ## Sources
 

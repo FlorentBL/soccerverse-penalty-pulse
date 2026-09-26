@@ -1,5 +1,7 @@
 # XAYA Arcade submission dossier
 
+Public listing request: [xaya/arcade-submissions#1](https://github.com/xaya/arcade-submissions/issues/1), opened with the exact game commit `ce71aba339a5c6f513dbddfa7f3fea7594b6df31`. Review and public listing are pending. The issue discloses the missing live two-account test.
+
 ## Game listing
 
 - Title: **Penalty Pulse**
