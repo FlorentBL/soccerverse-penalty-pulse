@@ -61,6 +61,14 @@ describe('wallet-free local preview', () => {
     for (let k = 0; k < 12; k++) state = kick(select(state), k === 10);
     expect(state).toMatchObject({ phase: 6, kick: 12, goals: [1, 0], winner: 0 });
   });
+  it('forces the fifth, lower-rated shooter after four bands have been used', () => {
+    let state = initialPreviewState();
+    for (let k = 0; k < 8; k++) state = kick(select(state), false);
+    expect(state).toMatchObject({ phase: 0, kick: 8, turn: 0 });
+    for (const id of shooters[0].slice(0, 4))
+      expect(advancePreview(state, { type: 'shooter', kick: 8, playerId: id }, null)).toBeNull();
+    expect(advancePreview(state, { type: 'shooter', kick: 8, playerId: 1917 }, null)?.state.phase).toBe(1);
+  });
   it('uses official ratings and touching goalkeeper coverage', () => {
     const state = select(initialPreviewState());
     expect(canReach(19465, 184)).toBe(true);
