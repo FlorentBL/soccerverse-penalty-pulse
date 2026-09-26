@@ -122,11 +122,17 @@ bool adjacent(std::uint8_t first, std::uint8_t second) {
   const int dy = int(first / 3) - int(second / 3);
   return dx >= -1 && dx <= 1 && dy >= -1 && dy <= 1;
 }
+bool edgeAdjacent(std::uint8_t first, std::uint8_t second) {
+  if (!adjacent(first, second)) return false;
+  const int dx = int(first % 3) - int(second % 3);
+  const int dy = int(first / 3) - int(second / 3);
+  return (dx == 0) != (dy == 0);
+}
 bool validReach(std::uint32_t keeper, std::uint32_t shooter, std::uint8_t first, std::uint8_t second) {
   if (first > 8) return false;
   if (!canReach(keeper, shooter)) return second == 255;
   if (second > 8 || second == first) return false;
-  return goalkeeperRating(keeper) >= 90 || adjacent(first, second);
+  return goalkeeperRating(keeper) >= 90 ? adjacent(first, second) : edgeAdjacent(first, second);
 }
 
 bool initial(std::uint8_t participants, const std::uint8_t*, std::size_t cfgLength, State& out) {

@@ -112,8 +112,9 @@ int main() {
   assert(ratingTier(shootingRating(184)) == 0 && ratingTier(shootingRating(874)) == 1 &&
          ratingTier(shootingRating(1917)) == 2);
   assert(canReach(19465, 184) && !canReach(19465, 1917));
-  assert(validReach(19465, 184, 0, 8) && !validReach(1438, 184, 0, 8));
-  assert(validReach(1438, 184, 0, 4) && validReach(62, 184, 0, 255) &&
+  assert(!validReach(19465, 184, 6, 8) && !validReach(19465, 184, 0, 8));
+  assert(validReach(19465, 184, 0, 4) && !validReach(1438, 184, 0, 4));
+  assert(validReach(1438, 184, 0, 1) && validReach(62, 184, 0, 255) &&
          !validReach(62, 184, 0, 4));
   assert(adjacent(0, 4) && !adjacent(0, 8) && !adjacent(0, 0));
   pair(s, 184, 19465, 874, 1438, 1);

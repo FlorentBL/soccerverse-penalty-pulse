@@ -8,7 +8,7 @@
 | Config suffix | none (`null` in submission JSON; no bytes) |
 | Full cfg delivered to `arcade_initial_state` | 0 bytes |
 | Rules blob | `blob/rules.wasm` |
-| Rules SHA-256 | `4cddbd81a8f5f060b21e1385377426e653197542f04d431433f089946447fc77` |
+| Rules SHA-256 | `b926b0a9ccb2128c0611b41d734079316868078e5fc538bee22cde5d854991e7` |
 | State encoding | version 3, fixed 127 bytes; see `rules/pulse/game.cpp` and `src/lib/pulse/codec.ts` |
 | Turns | 3 signed moves to commit/select/reveal a duo drawn only from the three fixed `FC` shooters and three fixed `GK` keepers, then 3 moves per penalty; at most 6 regulation kicks, early finish and paired sudden death, up to 254 total kicks |
 | Timeout | active seat forfeits; opponent wins |

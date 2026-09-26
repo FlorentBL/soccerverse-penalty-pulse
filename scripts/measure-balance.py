@@ -28,11 +28,14 @@ def targets(player):
 def adjacent(a, b):
     return a != b and abs(a % 3 - b % 3) <= 1 and abs(a // 3 - b // 3) <= 1
 
+def edge_adjacent(a, b):
+    return adjacent(a, b) and (a % 3 == b % 3) != (a // 3 == b // 3)
+
 @lru_cache(None)
 def score_value(targets_, keeper_tier):
     guards = ([(a,) for a in range(9)] if keeper_tier == 2 or len(targets_) < 4 else
-              [(a, b) for a in range(9) for b in range(a + 1, 9)] if keeper_tier == 0 else
-              [(a, b) for a in range(9) for b in range(a + 1, 9) if adjacent(a, b)])
+              [(a, b) for a in range(9) for b in range(a + 1, 9) if adjacent(a, b)] if keeper_tier == 0 else
+              [(a, b) for a in range(9) for b in range(a + 1, 9) if edge_adjacent(a, b)])
     # Minimize the defender's largest save chance across all legal positions.
     a_ub = [[*[int(t in guard) for t in targets_], -1] for guard in guards]
     result = linprog([*[0] * len(targets_), 1], A_ub=a_ub,

@@ -23,7 +23,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'SHOOTER · RELIABLE ZONES', shotText: 'Official Soccerverse shooting rating sets how many of the nine zones are green.',
     keeperTitle: 'GOALKEEPER · COVERAGE', keeperText: 'Official Soccerverse goalkeeper rating sets how many zones can be covered.',
-    low: '1 zone', middle: '2 adjacent zones', elite: '2 zones anywhere',
+    low: '1 zone', middle: '2 zones sharing an edge', elite: '2 touching zones, edge or corner',
     finalNote: 'Only the six displayed players can be selected; arbitrary Soccerverse IDs are rejected by the game rules. Shooters are FC and keepers are GK. Against a shooter with only three green zones, every keeper covers one zone. Ratings and positions are pinned from Soccerverse; ownership is not required. Zone layouts and thresholds are Arcade rules.',
   },
   fr: {
@@ -37,7 +37,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'TIREUR · CASES FIABLES', shotText: 'La note de tir officielle Soccerverse détermine combien des neuf cases sont vertes.',
     keeperTitle: 'GARDIEN · COUVERTURE', keeperText: 'La note de gardien officielle Soccerverse détermine les cases couvertes.',
-    low: '1 case', middle: '2 cases adjacentes', elite: '2 cases au choix',
+    low: '1 case', middle: '2 cases voisines par un côté', elite: '2 cases qui se touchent, côté ou coin',
     finalNote: 'Seuls les six joueurs affichés peuvent être choisis ; les ID Soccerverse libres sont refusés par les règles. Les tireurs sont FC et les gardiens GK. Face à un tireur qui n’a que trois cases vertes, tout gardien couvre une seule case. Notes et postes Soccerverse sont figés ; posséder un joueur n’est pas nécessaire. Les seuils et motifs sont des règles Arcade.',
   },
   it: {
@@ -51,7 +51,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'TIRATORE · ZONE AFFIDABILI', shotText: 'Il valore di tiro ufficiale Soccerverse determina quante delle nove zone sono verdi.',
     keeperTitle: 'PORTIERE · COPERTURA', keeperText: 'Il valore da portiere ufficiale Soccerverse determina le zone coperte.',
-    low: '1 zona', middle: '2 zone adiacenti', elite: '2 zone a scelta',
+    low: '1 zona', middle: '2 zone vicine per lato', elite: '2 zone che si toccano, lato o angolo',
     finalNote: 'Si possono scegliere solo i sei giocatori mostrati; le regole rifiutano gli ID Soccerverse liberi. I tiratori sono FC e i portieri GK. Contro un tiratore con tre zone verdi, ogni portiere copre una zona. Valori e ruoli Soccerverse sono fissati; non serve possedere il giocatore. Soglie e schemi sono regole Arcade.',
   },
   es: {
@@ -65,7 +65,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'LANZADOR · ZONAS FIABLES', shotText: 'La nota oficial de tiro Soccerverse determina cuántas de las nueve zonas son verdes.',
     keeperTitle: 'PORTERO · COBERTURA', keeperText: 'La nota oficial de portero Soccerverse determina las zonas cubiertas.',
-    low: '1 zona', middle: '2 zonas adyacentes', elite: '2 zonas libres',
+    low: '1 zona', middle: '2 zonas vecinas por un lado', elite: '2 zonas que se tocan, lado o esquina',
     finalNote: 'Solo se pueden elegir los seis jugadores mostrados; las reglas rechazan los ID Soccerverse libres. Los lanzadores son FC y los porteros GK. Ante un lanzador con tres zonas verdes, todo portero cubre una zona. Las notas y posiciones Soccerverse están fijadas; no hace falta poseer al jugador. Los umbrales y patrones son reglas Arcade.',
   },
   pt: {
@@ -79,7 +79,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'MARCADOR · ZONAS FIÁVEIS', shotText: 'A nota oficial de remate Soccerverse define quantas das nove zonas são verdes.',
     keeperTitle: 'GUARDA-REDES · COBERTURA', keeperText: 'A nota oficial de guarda-redes Soccerverse define as zonas cobertas.',
-    low: '1 zona', middle: '2 zonas adjacentes', elite: '2 zonas à escolha',
+    low: '1 zona', middle: '2 zonas vizinhas por um lado', elite: '2 zonas que se tocam, lado ou canto',
     finalNote: 'Só podem ser escolhidos os seis jogadores apresentados; as regras rejeitam IDs Soccerverse livres. Os marcadores são FC e os guarda-redes GK. Contra um marcador com três zonas verdes, qualquer guarda-redes cobre uma zona. Notas e posições Soccerverse estão fixadas; não é preciso possuir o jogador. Limiares e padrões são regras Arcade.',
   },
 };

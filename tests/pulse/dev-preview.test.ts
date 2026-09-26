@@ -65,12 +65,17 @@ describe('wallet-free local preview', () => {
     const state = advancePreview(first.state, { type: 'pick', kick: 0, shooterId: 874, keeperId: 19465 }, null)!.state;
     expect(canReach(19465, 184)).toBe(true);
     expect(canReach(19465, 1917)).toBe(false);
-    expect(validReach(19465, 184, 0, 8)).toBe(true);
+    expect(validReach(19465, 184, 6, 8)).toBe(false);
+    expect(validReach(19465, 184, 0, 8)).toBe(false);
+    expect(validReach(19465, 184, 0, 4)).toBe(true);
+    expect(validReach(1438, 184, 0, 4)).toBe(false);
+    expect(validReach(1438, 184, 0, 1)).toBe(true);
     expect(validReach(1438, 184, 0, 8)).toBe(false);
     expect(validReach(62, 184, 0, 255)).toBe(true);
     expect(advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 255 }, null)).toBeNull();
-    const next = advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 8 }, null);
-    expect(next?.keeperChoice).toEqual({ lane: 0, reach: 8 } satisfies PreviewGuard);
+    expect(advancePreview(state, { type: 'guard', kick: 0, lane: 6, reach: 8 }, null)).toBeNull();
+    const next = advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 4 }, null);
+    expect(next?.keeperChoice).toEqual({ lane: 0, reach: 4 } satisfies PreviewGuard);
   });
   it('uses the official shooting rating for 3, 7 and 8 scoring zones', () => {
     expect(shootingRating(1917)).toBe(59);

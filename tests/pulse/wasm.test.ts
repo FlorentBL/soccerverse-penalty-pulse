@@ -100,7 +100,7 @@ describe('Penalty Pulse WASM judge', () => {
     }
     const striker = 184, keeper = 19465;
     const target = scoringTargets(striker)[0];
-    const primary = (target + 2) % 9;
+    const primary = target % 3 < 2 ? target + 1 : target - 1;
     const pairMoves = [await encodePickCommit(0, striker, 62, salt), encodePick(874, keeper), encodePickReveal(striker, 62, salt)];
     const caught = await applyAll([...pairMoves, await encodeCommit(0, primary, target, salt),
       encodeShot(target), encodeReveal(primary, target, salt)]);
@@ -112,7 +112,15 @@ describe('Penalty Pulse WASM judge', () => {
     const badState = await applyAll(pairMoves);
     const h2 = parse(api, badState);
     expect(call(api, 'apply', h2, encodeShot(target))).toBeNull();
+    // The opaque commitment cannot be checked until the defender reveals it.
+    const distantCommit = call(api, 'apply', h2, await encodeCommit(0, 6, 8, salt))!;
     api.arcade_release(h2);
+    const shooting = parse(api, distantCommit);
+    const pendingReveal = call(api, 'apply', shooting, encodeShot(target))!;
+    api.arcade_release(shooting);
+    const revealing = parse(api, pendingReveal);
+    expect(call(api, 'apply', revealing, encodeReveal(6, 8, salt))).toBeNull();
+    api.arcade_release(revealing);
   });
   it('rejects GK and wing players as shooters and FC players as keepers', async () => {
     const api = await judge();

@@ -212,14 +212,16 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
           const key = labels[lane % 3];
           const height = heights[Math.floor(lane / 3)];
           const chosen = defending ? guard === lane || reach === lane : shooting ? aim === lane : false;
+          const outOfReach = defending && reachNeeded && guard !== null && lane !== guard &&
+            !validReach(keeperId, strikerId, guard, lane);
           const last = !replay && (finished || game?.phase === 0);
           const keeperHere = last && (game?.lastGuard === lane || game?.lastReach === lane);
           const ballHere = last && game?.lastShot === lane;
           const marker = keeperHere ? 'keeper' : ballHere ? game?.lastResult === 3 ? 'missed' : 'ball' : '';
-          return <button type="button" key={lane} className={'pulse-zone ' + (chosen ? 'selected ' : '') + (allowed.includes(lane) && (picking || defending || shooting) ? 'scoring ' : '') + (defending && reach === lane ? 'pulse-reach ' : '') + (defending && guard === lane ? 'pulse-primary ' : '') + marker}
-            disabled={(!defending && !shooting) || busy || !!replay || (defending && lockedGuard !== null)}
+          return <button type="button" key={lane} className={'pulse-zone ' + (chosen ? 'selected ' : '') + (allowed.includes(lane) && (picking || defending || shooting) ? 'scoring ' : '') + (outOfReach ? 'unreachable ' : '') + (defending && reach === lane ? 'pulse-reach ' : '') + (defending && guard === lane ? 'pulse-primary ' : '') + marker}
+            disabled={(!defending && !shooting) || busy || !!replay || (defending && lockedGuard !== null) || outOfReach}
             data-zone={lane} aria-label={`${t[height]} ${t[key]}`} aria-pressed={chosen}
-            onClick={() => defending ? (guard === null || !validReach(keeperId, strikerId, guard, lane) ? (setGuard(lane), setReach(null)) : setReach(lane)) : setAim(lane)}>
+            onClick={() => defending ? (guard === null || !reachNeeded || guard === lane ? (setGuard(lane), setReach(null)) : setReach(lane)) : setAim(lane)}>
             <span className="pulse-zone-no" aria-hidden="true">0{lane + 1}</span>
             <span className="pulse-zone-target" aria-hidden="true">{ballHere && !keeperHere ? '●' : defending && reach === lane ? '◎' : chosen ? '✦' : '+'}</span>
           </button>;

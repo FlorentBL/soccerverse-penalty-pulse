@@ -88,6 +88,9 @@
 .pulse-keeper-aura { position: absolute; inset: 13% -10% -3%; border-radius: 50%; background: radial-gradient(circle, #e3ffa05e, #c5fa7740 36%, transparent 69%); filter: blur(6px); }
 .pulse-keeper svg { position: relative; display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 7px 4px #001510d9) drop-shadow(0 0 5px #ffe3ae9a); }
 .pulse-zone:disabled { opacity: 1; }
+.pulse-zone.unreachable { cursor: not-allowed; }
+.pulse-zone.unreachable .pulse-zone-target { opacity: .3; box-shadow: none; }
+.pulse-zone.unreachable .pulse-zone-no { opacity: .5; }
 .pulse-zone-no { position: absolute; left: 10px; top: 7px; color: #d1eed2b1; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
 .pulse-zone-target { width: clamp(26px, 3.7vw, 45px); height: clamp(26px, 3.7vw, 45px); display: grid; place-items: center; border: 1px solid #eeffecd1; border-radius: 50%; box-shadow: 0 0 0 5px #ecffe923; color: #faffed; font-size: clamp(15px, 2vw, 23px); font-weight: 650; line-height: 1; }
 .pulse-zone.keeper .pulse-zone-target { font-size: 11px; font-weight: 950; }

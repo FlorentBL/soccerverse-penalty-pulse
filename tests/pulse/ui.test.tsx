@@ -29,8 +29,8 @@ describe('Penalty Pulse touch flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /rules/i }));
     const dialog = screen.getByRole('dialog', { name: 'HOW TO PLAY' });
     expect(dialog).toHaveTextContent('Both players see the exact same green zones');
-    expect(dialog).toHaveTextContent('2 adjacent zones');
-    expect(dialog).toHaveTextContent('2 zones anywhere');
+    expect(dialog).toHaveTextContent('2 zones sharing an edge');
+    expect(dialog).toHaveTextContent('2 touching zones, edge or corner');
     expect(dialog).toHaveTextContent('Against a shooter with only three green zones');
     fireEvent.click(screen.getByRole('button', { name: 'Close rules' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -71,18 +71,20 @@ describe('Penalty Pulse touch flow', () => {
       expect(document.querySelector(`[data-zone="${zone}"]`)).toHaveClass('scoring');
     expect(document.querySelector('[data-zone="3"]')).not.toHaveClass('scoring');
   });
-  it('lets an elite goalkeeper cover any second zone while keeping the dive hidden', async () => {
+  it('allows an elite goalkeeper a touching second zone but disables distant zones', async () => {
     setup();
     useChannelStore.getState().updateFromBoardState({ ...board(3, 1), pairShooters: [184, 874], pairKeepers: [62, 19465] });
     render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
-    expect(screen.getByText(/elite keeper: choose any second zone/i)).toBeInTheDocument();
+    expect(screen.getByText(/elite keeper: choose a second zone touching the first/i)).toBeInTheDocument();
     expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '4');
     fireEvent.click(screen.getByRole('button', { name: 'HIGH LEFT' }));
     expect(screen.getByRole('button', { name: /Commit dive/i })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'LOW RIGHT' }));
-    expect(screen.getByRole('button', { name: 'LOW RIGHT' })).toHaveClass('pulse-reach');
+    expect(screen.getByRole('button', { name: 'LOW RIGHT' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'LOW RIGHT' })).toHaveClass('unreachable');
+    fireEvent.click(screen.getByRole('button', { name: 'MID CENTRE' }));
+    expect(screen.getByRole('button', { name: 'MID CENTRE' })).toHaveClass('pulse-reach');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Commit dive/i })));
-    expect(submit).toHaveBeenCalledWith({ type: 'guard', kick: 0, lane: 0, reach: 8 });
+    expect(submit).toHaveBeenCalledWith({ type: 'guard', kick: 0, lane: 0, reach: 4 });
   });
   it('lets the shooter aim without seeing the hidden goalkeeper position', async () => {
     setup();

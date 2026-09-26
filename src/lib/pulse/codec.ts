@@ -77,11 +77,15 @@ export function adjacent(first: number, second: number): boolean {
     Math.abs(first % 3 - second % 3) <= 1 &&
     Math.abs(Math.floor(first / 3) - Math.floor(second / 3)) <= 1;
 }
+export function edgeAdjacent(first: number, second: number): boolean {
+  return adjacent(first, second) &&
+    ((first % 3 === second % 3) !== (Math.floor(first / 3) === Math.floor(second / 3)));
+}
 export function validReach(keeperId: number, shooterId: number, first: number, second: number): boolean {
   if (first < 0 || first > 8) return false;
   if (!canReach(keeperId, shooterId)) return second === 255;
   if (second < 0 || second > 8 || second === first) return false;
-  return (goalkeeperRating(keeperId) ?? 0) >= 90 || adjacent(first, second);
+  return (goalkeeperRating(keeperId) ?? 0) >= 90 ? adjacent(first, second) : edgeAdjacent(first, second);
 }
 export function encodePick(shooter: number, keeper: number): Uint8Array {
   const b = new Uint8Array(9);
