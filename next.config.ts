@@ -1,4 +1,5 @@
 import { contentBuildId } from '@xayaarcade/sdk/server'
+import { networkInterfaces } from 'node:os'
 import type { NextConfig } from 'next'
 
 // Rewrite destinations are baked into the standalone build's routes manifest at BUILD time,
@@ -24,6 +25,13 @@ const wsProxyDestination =
 const chainProxyDestination = process.env.CHAIN_PROXY_DESTINATION?.trim() || ''
 const gspProxyDestination = process.env.GSP_PROXY_DESTINATION?.trim() || ''
 
+// A phone on the same Wi-Fi opens the dev server through this machine's LAN IP.
+// Next blocks its own JS chunks for that host unless it is explicitly allowed.
+const lanDevOrigins = Object.values(networkInterfaces()).flatMap((interfaces) =>
+  (interfaces ?? []).filter((address) => address.family === 'IPv4' && !address.internal)
+    .map((address) => address.address),
+)
+
 // PATH-BASED SERVING. When the arcade serves this bundle under a sub-path
 // (arcade.xaya.io/g/<slug>/), every root-absolute reference - /_next/, links, RSC URLs -
 // must carry that prefix, which is exactly what Next's `basePath` rewrites at BUILD time.
@@ -45,10 +53,11 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: false, // preserves the SDK channel component's mount lifecycle
   output: isExport ? 'export' : 'standalone',
-  allowedDevOrigins: [
+  allowedDevOrigins: [...new Set([
     'localhost',
+    ...lanDevOrigins,
     ...(process.env.NEXT_DEV_ORIGINS?.split(',').map((s) => s.trim()).filter(Boolean) ?? []),
-  ],
+  ])],
   ...(basePath ? { basePath } : {}),
   ...(isExport
     ? {}

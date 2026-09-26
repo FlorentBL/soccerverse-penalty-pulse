@@ -19,6 +19,8 @@ Open [prototype/index.html](prototype/index.html) through a local static server 
 
 During development, open `http://localhost:3001/?preview=1` or choose **Preview without wallet** on the home screen. This opens the actual React board in a local hotseat demo: choose a striker, choose the opposing goalkeeper's dive, then shoot, repeating until the result. **Restart** resets the demo. The preview is available only with `npm run dev` and resolves turns locally; it does not create an Arcade match or validate the SDK and WASM multiplayer flow.
 
+To try the preview on a phone, connect it to the same Wi-Fi as the development machine and open `http://<machine-LAN-IP>:3001/?preview=1`. The dev server automatically allows its current local IPv4 addresses for Next.js scripts; `NEXT_DEV_ORIGINS` can add another development hostname. Keep the dev server and machine awake while testing.
+
 The commit/reveal ordering keeps the goalkeeper's chosen direction secret until the striker has shot. The keeper's 32-byte salt is generated locally and stored per channel/seat/kick so reconnects can reveal the same commitment. A lost browser storage record may prevent a reveal and lead to a timeout; use the same browser until the kick resolves.
 
 ## Build and tests

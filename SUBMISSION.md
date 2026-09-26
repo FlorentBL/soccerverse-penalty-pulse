@@ -25,7 +25,7 @@
 - WASM path: `blob/rules.wasm`
 - WASM SHA-256: `63073035b19e4bc18297c32bda4cff7d37241afc0a48da1f5bde97d0f8d21973`
 - Bundle path: `dist/bundle.tar.gz` (generated locally, ignored by Git)
-- Local playground bundle SHA-256: `2b1c7bc81336451b374b00f20127742d0ec070b0c53d79c307aa50f8f0a07272` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host must supply the runtime relay, GSP and Polygon endpoints; the local export used blank endpoint environment variables.
+- Local playground bundle SHA-256: `40bc420869a1c626c2ecf062db1e5b1d898d1fe89f23595e8a37107ac9fd87c6` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host must supply the runtime relay, GSP and Polygon endpoints; the local export used blank endpoint environment variables.
 - Source datapack SHA-256: `d8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e`
 - Soccerverse shooting table SHA-256: `fe0eb9c810a27f17f6ad605ee29669449774bc2a55603e0cfaa6c1e1065abfd6`
 - SDK: vendored `@xayaarcade/sdk` 0.20.5; version checked against the local platform example snapshot, release commit provenance still needs a real platform Git checkout.
