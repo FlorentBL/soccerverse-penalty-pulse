@@ -1,5 +1,6 @@
 import type { PulseInput } from './channel';
 import { goalkeeperRating, ratingTier, scoringTargets, shootingRating, tierUsed, validReach, type PulseState } from './codec';
+import { isRosterShooter, isRosterKeeper } from './players';
 
 export interface PreviewGuard { lane: number; reach: number }
 /** Local UI rehearsal only. Real matches are judged by rules.wasm through the SDK. */
@@ -30,7 +31,8 @@ export function advancePreview(
   if ((state.phase === 0 || state.phase === 1) && input.type === 'pick') {
     const seat = state.phase;
     if (!Number.isInteger(input.shooterId) || !Number.isInteger(input.keeperId) ||
-        input.shooterId === input.keeperId || ratingTier(shootingRating(input.shooterId)) < 0 ||
+        input.shooterId === input.keeperId || !isRosterShooter(input.shooterId) || !isRosterKeeper(input.keeperId) ||
+        ratingTier(shootingRating(input.shooterId)) < 0 ||
         ratingTier(goalkeeperRating(input.keeperId)) < 0 || state.kick < 6 &&
         (tierUsed(state.usedShooters[seat], input.shooterId, 'shoot') ||
          tierUsed(state.usedKeepers[seat], input.keeperId, 'save'))) return null;

@@ -12,6 +12,13 @@ function state(encoded: Uint8Array, turn: number): ParsedBoardState {
 }
 afterEach(() => { vi.unstubAllGlobals(); });
 describe('keeper commitment persistence', () => {
+  it('refuses arbitrary Soccerverse IDs before making a move', async () => {
+    const lines = readFileSync(resolve(__dirname, '../fixtures/native-trace.txt'), 'utf8').split('\n');
+    const channel = new PulseChannel(99n);
+    channel.setPlayerIndex(1);
+    channel.setPendingInput({ type: 'pick', kick: 0, shooterId: 1100, keeperId: 1438 });
+    expect(await channel.maybeAutoMove(state(bytes(lines[2].split(' ')[1]), 1))).toBeNull();
+  });
   it('persists the hidden first-player selection through reveal and retries', async () => {
     vi.stubGlobal('crypto', webcrypto);
     const values = new Map<string, string>();
@@ -31,7 +38,7 @@ describe('keeper commitment persistence', () => {
     channel.setPendingInput({ type: 'pick', kick: 0, shooterId: 184, keeperId: 19465 });
     const committed = await channel.maybeAutoMove(state(initial, 0));
     expect(committed?.[0]).toBe(5);
-    channel.setPendingInput({ type: 'pick', kick: 0, shooterId: 1460, keeperId: 1438 });
+    channel.setPendingInput({ type: 'pick', kick: 0, shooterId: 874, keeperId: 1438 });
     expect(await channel.maybeAutoMove(state(initial, 0))).toEqual(committed);
     const reveal = await channel.maybeAutoMove(state(afterSecondPick, 0));
     expect(reveal?.[0]).toBe(6);

@@ -101,18 +101,33 @@ describe('Penalty Pulse WASM judge', () => {
     const striker = 184, keeper = 19465;
     const target = scoringTargets(striker)[0];
     const primary = (target + 2) % 9;
-    const pairMoves = [await encodePickCommit(0, striker, 62, salt), encodePick(1100, keeper), encodePickReveal(striker, 62, salt)];
+    const pairMoves = [await encodePickCommit(0, striker, 62, salt), encodePick(874, keeper), encodePickReveal(striker, 62, salt)];
     const caught = await applyAll([...pairMoves, await encodeCommit(0, primary, target, salt),
       encodeShot(target), encodeReveal(primary, target, salt)]);
     expect(decodeState(caught, 2)).toMatchObject({ lastResult: 2, lastReach: target,
-      pairShooters: [striker, 1100], pairKeepers: [62, keeper] });
+      pairShooters: [striker, 874], pairKeepers: [62, keeper] });
     const h = parse(api, caught);
     expect(api.arcade_is_valid(h)).toBe(1);
     api.arcade_release(h);
-    expect(scoringTargets(keeper)).toHaveLength(6);
     const badState = await applyAll(pairMoves);
     const h2 = parse(api, badState);
     expect(call(api, 'apply', h2, encodeShot(target))).toBeNull();
     api.arcade_release(h2);
+  });
+  it('rejects GK and wing players as shooters and FC players as keepers', async () => {
+    const api = await judge();
+    const salt = Uint8Array.from({ length: 32 }, (_, n) => n + 3);
+    const initial = call(api, 'initial', 2)!;
+    const first = parse(api, initial);
+    const committed = call(api, 'apply', first, await encodePickCommit(0, 184, 19465, salt))!;
+    api.arcade_release(first);
+    const second = parse(api, committed);
+    expect(call(api, 'apply', second, encodePick(159, 1438))).toBeNull();
+    expect(call(api, 'apply', second, encodePick(1460, 1438))).toBeNull();
+    expect(call(api, 'apply', second, encodePick(874, 184))).toBeNull();
+    expect(call(api, 'apply', second, encodePick(1100, 1438))).toBeNull();
+    expect(call(api, 'apply', second, encodePick(874, 22221))).toBeNull();
+    expect(call(api, 'apply', second, encodePick(874, 1438))).not.toBeNull();
+    api.arcade_release(second);
   });
 });

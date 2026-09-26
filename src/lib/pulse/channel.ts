@@ -1,5 +1,6 @@
 import type { ArcadeChannel, BoardMoveBytes, ParsedBoardState } from '@xayaarcade/sdk';
 import { decodeState, encodeCommit, encodePick, encodePickCommit, encodePickReveal, encodeReveal, encodeShot, goalkeeperRating, ratingTier, shootingRating, tierUsed, validReach } from './codec';
+import { isRosterShooter, isRosterKeeper } from './players';
 
 export type PulseInput = { type: 'pick'; kick: number; shooterId: number; keeperId: number } |
   { type: 'guard'; kick: number; lane: number; reach: number } |
@@ -32,7 +33,8 @@ function readPick(channelId: bigint | null, seat: number, kick: number): PickSec
     const secret = JSON.parse(value) as PickSecret;
     return Number.isInteger(secret.shooterId) && secret.shooterId > 0 && secret.shooterId <= 523571 &&
       Number.isInteger(secret.keeperId) && secret.keeperId > 0 && secret.keeperId <= 523571 &&
-      secret.shooterId !== secret.keeperId && validSalt(secret.salt) ? secret : null;
+      secret.shooterId !== secret.keeperId && isRosterShooter(secret.shooterId) &&
+      isRosterKeeper(secret.keeperId) && validSalt(secret.salt) ? secret : null;
   } catch { return null; }
 }
 export function keeperChoice(channelId: bigint | null, seat: number, kick: number): GuardSecret | null {
@@ -49,7 +51,8 @@ export class PulseChannel implements ArcadeChannel {
     if ((p.type === 'guard' || p.type === 'shot' || p.type === 'pick') &&
         Number.isInteger(p.kick) && p.kick >= 0 && p.kick < 254 &&
         (p.type === 'pick' ? Number.isInteger(p.shooterId) && p.shooterId > 0 && p.shooterId <= 523571 &&
-          Number.isInteger(p.keeperId) && p.keeperId > 0 && p.keeperId <= 523571 && p.shooterId !== p.keeperId :
+          Number.isInteger(p.keeperId) && p.keeperId > 0 && p.keeperId <= 523571 &&
+          p.shooterId !== p.keeperId && isRosterShooter(p.shooterId) && isRosterKeeper(p.keeperId) :
           Number.isInteger(p.lane) && p.lane >= 0 && p.lane <= 8) &&
         (p.type !== 'guard' || Number.isInteger(p.reach) &&
           (p.reach === 255 || p.reach >= 0 && p.reach <= 8 && p.reach !== p.lane)))
@@ -72,7 +75,8 @@ export class PulseChannel implements ArcadeChannel {
     const input = this.pending;
     this.pending = null;
     if (game.phase === 0 && this.seat === 0 && input.type === 'pick') {
-      if (ratingTier(shootingRating(input.shooterId)) < 0 || ratingTier(goalkeeperRating(input.keeperId)) < 0 ||
+      if (!isRosterShooter(input.shooterId) || !isRosterKeeper(input.keeperId) ||
+          ratingTier(shootingRating(input.shooterId)) < 0 || ratingTier(goalkeeperRating(input.keeperId)) < 0 ||
           tierUsed(game.usedShooters[this.seat], input.shooterId, 'shoot') ||
           tierUsed(game.usedKeepers[this.seat], input.keeperId, 'save')) return null;
       let secret = readPick(this.channelId, this.seat, game.kick);
@@ -85,7 +89,8 @@ export class PulseChannel implements ArcadeChannel {
       return encodePickCommit(Math.floor(game.kick / 2), secret.shooterId, secret.keeperId, new Uint8Array(secret.salt));
     }
     if (game.phase === 1 && this.seat === 1 && input.type === 'pick') {
-      if (ratingTier(shootingRating(input.shooterId)) < 0 || ratingTier(goalkeeperRating(input.keeperId)) < 0 ||
+      if (!isRosterShooter(input.shooterId) || !isRosterKeeper(input.keeperId) ||
+          ratingTier(shootingRating(input.shooterId)) < 0 || ratingTier(goalkeeperRating(input.keeperId)) < 0 ||
           tierUsed(game.usedShooters[this.seat], input.shooterId, 'shoot') ||
           tierUsed(game.usedKeepers[this.seat], input.keeperId, 'save')) return null;
       return encodePick(input.shooterId, input.keeperId);

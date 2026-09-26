@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { canReach, goalkeeperRating, ratingTier, scoringTargets, shootingRating, validReach, type PulseState } from '@/lib/pulse/codec';
+import { canReach, goalkeeperRating, isCentreForward, isGoalkeeper, ratingTier, scoringTargets, shootingRating, validReach, type PulseState } from '@/lib/pulse/codec';
 import { advancePreview, initialPreviewState, type PreviewGuard } from '@/lib/pulse/dev-preview';
 
-const shooters0 = [184, 1460, 159];
+const shooters0 = [184, 874, 1917];
 const keepers0 = [19465, 1438, 62];
-const shooters1 = [1100, 129718, 21];
-const keepers1 = [22221, 2932, 189];
+const shooters1 = [874, 1917, 184];
+const keepers1 = [1438, 62, 19465];
 function pair(state: PulseState, round: number): PulseState {
   const i = round < 3 ? round : 0;
   const one = advancePreview(state, { type: 'pick', kick: state.kick,
@@ -35,8 +35,8 @@ function kick(state: PulseState, scores: boolean): PulseState {
 describe('wallet-free local preview', () => {
   it('plays a pair with separate shooters and keepers', () => {
     let state = pair(initialPreviewState(), 0);
-    expect(state.pairShooters).toEqual([184, 1100]);
-    expect(state.pairKeepers).toEqual([19465, 22221]);
+    expect(state.pairShooters).toEqual([184, 874]);
+    expect(state.pairKeepers).toEqual([19465, 1438]);
     state = kick(state, true);
     expect(state).toMatchObject({ phase: 3, kick: 1, goals: [1, 0] });
     state = kick(state, false);
@@ -61,9 +61,10 @@ describe('wallet-free local preview', () => {
     expect(state).toMatchObject({ phase: 6, kick: 8, goals: [1, 0], winner: 0 });
   });
   it('differentiates elite, strong and underdog goalkeeper coverage', () => {
-    const state = pair(initialPreviewState(), 0);
+    const first = advancePreview(initialPreviewState(), { type: 'pick', kick: 0, shooterId: 184, keeperId: 62 }, null)!;
+    const state = advancePreview(first.state, { type: 'pick', kick: 0, shooterId: 874, keeperId: 19465 }, null)!.state;
     expect(canReach(19465, 184)).toBe(true);
-    expect(canReach(19465, 159)).toBe(false);
+    expect(canReach(19465, 1917)).toBe(false);
     expect(validReach(19465, 184, 0, 8)).toBe(true);
     expect(validReach(1438, 184, 0, 8)).toBe(false);
     expect(validReach(62, 184, 0, 255)).toBe(true);
@@ -72,12 +73,24 @@ describe('wallet-free local preview', () => {
     expect(next?.keeperChoice).toEqual({ lane: 0, reach: 8 } satisfies PreviewGuard);
   });
   it('uses the official shooting rating for 3, 7 and 8 scoring zones', () => {
-    expect(shootingRating(159)).toBe(58);
+    expect(shootingRating(1917)).toBe(59);
     expect(goalkeeperRating(19465)).toBe(95);
-    expect(scoringTargets(159)).toHaveLength(3);
-    expect(scoringTargets(1460)).toHaveLength(7);
+    expect(scoringTargets(1917)).toHaveLength(3);
+    expect(scoringTargets(874)).toHaveLength(7);
     expect(scoringTargets(184)).toHaveLength(8);
-    expect(ratingTier(shootingRating(159))).toBe(2);
+    expect(ratingTier(shootingRating(1917))).toBe(2);
+  });
+  it('permits only the three offered FC shooters and GK keepers', () => {
+    expect(isCentreForward(1917)).toBe(true);
+    expect(isGoalkeeper(159)).toBe(true);
+    expect(isCentreForward(159)).toBe(false);
+    expect(isCentreForward(1460)).toBe(false);
+    const state = initialPreviewState();
+    expect(advancePreview(state, { type: 'pick', kick: 0, shooterId: 159, keeperId: 19465 }, null)).toBeNull();
+    expect(advancePreview(state, { type: 'pick', kick: 0, shooterId: 1460, keeperId: 19465 }, null)).toBeNull();
+    expect(advancePreview(state, { type: 'pick', kick: 0, shooterId: 874, keeperId: 184 }, null)).toBeNull();
+    expect(advancePreview(state, { type: 'pick', kick: 0, shooterId: 1100, keeperId: 1438 }, null)).toBeNull();
+    expect(advancePreview(state, { type: 'pick', kick: 0, shooterId: 184, keeperId: 22221 }, null)).toBeNull();
   });
   it('prevents repeated rating bands per role in regulation and resolves the wire limit', () => {
     let state = initialPreviewState();

@@ -13,6 +13,8 @@ from scipy.optimize import linprog
 root = Path(__file__).resolve().parents[1]
 shoot = (root / 'data/player-shooting.bin').read_bytes()
 keep = (root / 'data/player-goalkeeping.bin').read_bytes()
+fc = (root / 'data/player-fc-bits.bin').read_bytes()
+gk = (root / 'data/player-gk-bits.bin').read_bytes()
 featured = json.loads((root / 'src/lib/pulse/featured.json').read_text())
 steps = (1, 2, 4, 5, 7, 8)
 
@@ -46,16 +48,19 @@ def goal(attacker, defender):
     return score_value(targets(attacker), goalkeeper_tier)
 
 ids = [i for i, s in enumerate(shoot) if s != 255]
+shooters = [i for i in ids if fc[i // 8] & (1 << (i % 8))]
+keepers = [i for i in ids if gk[i // 8] & (1 << (i % 8))]
 print('Official pinned players:', len(ids))
+print('Eligible FC shooters / GK keepers:', len(shooters), '/', len(keepers))
 print('Eligible shooting tiers 90+/75–89/55–74:',
-      [sum(lo <= shoot[i] <= hi for i in ids) for lo, hi in ((90, 100), (75, 89), (55, 74))])
+      [sum(lo <= shoot[i] <= hi for i in shooters) for lo, hi in ((90, 100), (75, 89), (55, 74))])
 print('Eligible keeper tiers 90+/75–89/55–74:',
-      [sum(lo <= keep[i] <= hi for i in ids) for lo, hi in ((90, 100), (75, 89), (55, 74))])
+      [sum(lo <= keep[i] <= hi for i in keepers) for lo, hi in ((90, 100), (75, 89), (55, 74))])
 print('Featured shooter vs keeper, optimal goal %:')
 for attacker in (p for p in featured if p['role'] == 'striker'):
     print(' ', attacker['name'], 'shooting', shoot[attacker['id']], 'zones', count(attacker['id']),
           [(defender['name'], round(100 * goal(attacker['id'], defender['id']), 1))
            for defender in featured if defender['role'] == 'keeper'])
 print('Three-zone underdog vs every featured keeper:',
-      [(defender['name'], round(100 * goal(159, defender['id']), 1))
+      [(defender['name'], round(100 * goal(1917, defender['id']), 1))
        for defender in featured if defender['role'] == 'keeper'])

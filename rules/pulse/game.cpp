@@ -7,12 +7,23 @@ namespace {
 constexpr std::uint8_t playerBits[] = {
 #include "player_bits.inc"
 };
+constexpr std::uint8_t playerFcBits[] = {
+#include "player_fc_bits.inc"
+};
+constexpr std::uint8_t playerGkBits[] = {
+#include "player_gk_bits.inc"
+};
 constexpr std::uint8_t playerShooting[] = {
 #include "player_shooting.inc"
 };
 constexpr std::uint8_t playerGoalkeeping[] = {
 #include "player_goalkeeping.inc"
 };
+#include "featured_roster.inc"
+bool inRoster(std::uint32_t id, const std::uint32_t (&roster)[3]) {
+  for (auto choice : roster) if (id == choice) return true;
+  return false;
+}
 std::uint32_t read32(const std::uint8_t* p) {
   return std::uint32_t(p[0]) | (std::uint32_t(p[1]) << 8) |
          (std::uint32_t(p[2]) << 16) | (std::uint32_t(p[3]) << 24);
@@ -51,7 +62,8 @@ bool tierUsed(const State& s, int seat, std::uint32_t id, bool keeper) {
   return false;
 }
 bool validDuo(std::uint32_t shooter, std::uint32_t keeper) {
-  return shooter != keeper && playerExists(shooter) && playerExists(keeper) &&
+  return shooter != keeper && inRoster(shooter, rosterShooters) && inRoster(keeper, rosterKeepers) &&
+    isCentreForward(shooter) && isGoalkeeper(keeper) &&
     ratingTier(shootingRating(shooter)) >= 0 && ratingTier(goalkeeperRating(keeper)) >= 0;
 }
 std::uint8_t expectedTurn(Phase phase, std::uint8_t kick) {
@@ -66,6 +78,14 @@ bool playerExists(std::uint32_t id) {
   return id && id < sizeof(playerShooting) && id < sizeof(playerGoalkeeping) &&
     playerShooting[id] != 255 && playerGoalkeeping[id] != 255 &&
     id / 8 < sizeof(playerBits) && (playerBits[id / 8] & (1u << (id % 8)));
+}
+bool isCentreForward(std::uint32_t id) {
+  return playerExists(id) && id / 8 < sizeof(playerFcBits) &&
+    (playerFcBits[id / 8] & (1u << (id % 8)));
+}
+bool isGoalkeeper(std::uint32_t id) {
+  return playerExists(id) && id / 8 < sizeof(playerGkBits) &&
+    (playerGkBits[id / 8] & (1u << (id % 8)));
 }
 std::uint8_t shootingRating(std::uint32_t id) {
   return playerExists(id) ? playerShooting[id] : 255;

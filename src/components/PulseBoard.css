@@ -177,11 +177,6 @@
 .pulse-roster-cards b { color: #d9fb74; font: italic 22px Impact, 'Arial Narrow', sans-serif; }
 .pulse-roster-cards em { position: absolute; right: 4px; bottom: 3px; color: #f0ffc8; font-size: 8px; font-style: normal; font-weight: 950; }
 .pulse-picker label { color: #c0dbbd; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
-.pulse-search { display: flex; gap: 8px; }
-.pulse-search input { width: 100%; min-width: 0; flex: 1; border: 1px solid #7ba78a88; border-radius: 2px; padding: 10px 13px; background: #061b17; color: #f5fae9; font-size: 16px; }
-.pulse-search input::placeholder { color: #829f89; }
-.pulse-search button { flex: none; min-height: 40px; padding: 0 14px; border: 1px solid #a8db77; border-radius: 2px; background: #254532; color: #e9ffcd; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .07em; }
-.pulse-search button:hover { background: #345f3f; }
 .pulse-featured > div { display: flex; flex-wrap: nowrap; gap: 7px; margin-top: 9px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: thin; scrollbar-color: #a2d177 #0b2b21; }
 .pulse-featured button { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; max-width: 100%; flex: none; padding: 4px 10px 4px 4px; border: 1px solid #8eb88b66; border-radius: 2px; background: #173d2f; color: #f1f8df; font-size: 11px; font-weight: 750; text-align: left; }
 .pulse-featured button span { display: grid; place-items: center; width: 24px; height: 24px; flex: none; background: #c9ef80; color: #103221; font-family: Impact, 'Arial Narrow', sans-serif; font-size: 13px; }

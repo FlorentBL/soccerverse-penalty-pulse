@@ -6,7 +6,7 @@ import { useLanguage } from './LanguageProvider';
 import { submitPulseInput } from '@/hooks/use-pulse-input';
 import type { PulseState } from '@/lib/pulse/codec';
 import { canReach, goalkeeperRating, ratingTier, scoringTargetCount, scoringTargets, shootingRating, tierUsed, validReach } from '@/lib/pulse/codec';
-import { featuredPlayers, findPlayerName } from '@/lib/pulse/players';
+import { featuredPlayers, isRosterKeeper, isRosterShooter } from '@/lib/pulse/players';
 import { keeperChoice, type PulseInput } from '@/lib/pulse/channel';
 import KeeperFigure from './KeeperFigure';
 import PulseRules, { rulesCopy } from './PulseRules';
@@ -38,9 +38,6 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const [aim, setAim] = useState<number | null>(null);
   const [selectedShooter, setSelectedShooter] = useState<number | null>(null);
   const [selectedKeeper, setSelectedKeeper] = useState<number | null>(null);
-  const [playerNames, setPlayerNames] = useState<Record<number, string>>({});
-  const [lookupShooter, setLookupShooter] = useState('');
-  const [lookupKeeper, setLookupKeeper] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -75,15 +72,6 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       setLockedGuard(saved?.lane ?? null); setGuard(saved?.lane ?? null); setReach(saved?.reach === 255 ? null : saved?.reach ?? null);
     }
   }, [channelId, game?.phase, game?.kick, game?.turn, localPlayerIndex, preview]);
-  useEffect(() => {
-    const ids = picking ? [selectedShooter, selectedKeeper] : [strikerId, keeperId];
-    let live = true;
-    for (const id of ids) if (id && !playerNames[id])
-      void findPlayerName(id).then(name => {
-        if (live && name) setPlayerNames(previous => ({ ...previous, [id]: name }));
-      }).catch(() => {});
-    return () => { live = false; };
-  }, [picking, selectedShooter, selectedKeeper, strikerId, keeperId, playerNames]);
   useEffect(() => {
     if (!busy) return;
     const timer = window.setTimeout(() => { setBusy(false); setError(t.slow); }, 15000);
@@ -141,11 +129,15 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
 
   function selectPlayer(id: number, role: 'shoot' | 'save') {
     if (replay) return;
-    if (shootingRating(id) === null || goalkeeperRating(id) === null) { setError(t.playerMissing); return; }
+    const reject = (message: string) => { setError(message); };
+    if (shootingRating(id) === null || goalkeeperRating(id) === null) { reject(t.playerMissing); return; }
+    if (role === 'shoot' ? !isRosterShooter(id) : !isRosterKeeper(id)) {
+      reject(t.playerMissing); return;
+    }
     const rating = role === 'shoot' ? shootingRating(id) : goalkeeperRating(id);
-    if (ratingTier(rating) < 0) { setError(t.tierInvalid); return; }
-    if (tierUsed(role === 'shoot' ? usedShooters : usedKeepers, id, role)) { setError(t.tierUsed); return; }
-    if (id === (role === 'shoot' ? selectedKeeper : selectedShooter)) { setError(t.distinctPlayers); return; }
+    if (ratingTier(rating) < 0) { reject(t.tierInvalid); return; }
+    if (tierUsed(role === 'shoot' ? usedShooters : usedKeepers, id, role)) { reject(t.tierUsed); return; }
+    if (id === (role === 'shoot' ? selectedKeeper : selectedShooter)) { reject(t.distinctPlayers); return; }
     setError('');
     if (role === 'shoot') setSelectedShooter(id);
     else setSelectedKeeper(id);
@@ -263,11 +255,10 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
         {(['striker', 'keeper'] as const).map(role => {
           const isShooter = role === 'striker';
           const selected = isShooter ? selectedShooter : selectedKeeper;
-          const selectedName = selected ? playerNames[selected] ?? featuredPlayers.find(p => p.id === selected)?.name ?? '#' + selected : t.chooseOne;
+          const selectedName = selected ? featuredPlayers.find(p => p.id === selected)?.name ?? '#' + selected : t.chooseOne;
           const usedIds = isShooter ? usedShooters : usedKeepers;
-          const lookup = isShooter ? lookupShooter : lookupKeeper;
           return <section className="pulse-roster" key={role} aria-label={isShooter ? t.striker : t.keeper}>
-            <div className="pulse-roster-head"><div><span>{isShooter ? '01' : '02'}</span><strong>{isShooter ? t.striker : t.keeper}</strong></div>
+            <div className="pulse-roster-head"><div><span>{isShooter ? '01' : '02'}</span><strong>{isShooter ? t.striker + ' · FC' : t.keeper + ' · GK'}</strong></div>
               <small>{selectedName}</small></div>
             <div className="pulse-roster-cards">{featuredPlayers.filter(p => p.role === role).map(p => {
               const rating = isShooter ? shootingRating(p.id) : goalkeeperRating(p.id);
@@ -278,14 +269,10 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
                 <strong>{p.name}</strong><b>{rating}</b>{used && <em>{t.tierSpent}</em>}
               </button>;
             })}</div>
-            <label htmlFor={'pulse-player-' + role}>{t.playerId}</label>
-            <div className="pulse-search"><input id={'pulse-player-' + role} type="number" min="1" max="523571" inputMode="numeric"
-              value={lookup} onChange={e => isShooter ? setLookupShooter(e.target.value) : setLookupKeeper(e.target.value)} placeholder="ID" />
-              <button type="button" disabled={!!replay} onClick={() => selectPlayer(Number(lookup), isShooter ? 'shoot' : 'save')}>{t.search}</button></div>
           </section>;
         })}
       </div>}
-      {(defending || shooting) && <div className="pulse-matchup"><div><span>{t.striker}</span><b>{playerNames[strikerId] ?? featuredPlayers.find(p => p.id === strikerId)?.name ?? '#' + strikerId}</b><small>{t.shootingRating} {shootingRating(strikerId)} · {scoringTargetCount(strikerId)}/9</small></div><strong>VS</strong><div><span>{t.keeper}</span><b>{playerNames[keeperId] ?? featuredPlayers.find(p => p.id === keeperId)?.name ?? '#' + keeperId}</b><small>{t.keeper} {goalkeeperRating(keeperId)} · {reachNeeded ? '2' : '1'}/9</small></div></div>}
+      {(defending || shooting) && <div className="pulse-matchup"><div><span>{t.striker}</span><b>{featuredPlayers.find(p => p.id === strikerId)?.name ?? '#' + strikerId}</b><small>{t.shootingRating} {shootingRating(strikerId)} · {scoringTargetCount(strikerId)}/9</small></div><strong>VS</strong><div><span>{t.keeper}</span><b>{featuredPlayers.find(p => p.id === keeperId)?.name ?? '#' + keeperId}</b><small>{t.keeper} {goalkeeperRating(keeperId)} · {reachNeeded ? '2' : '1'}/9</small></div></div>}
       {defending && reachNeeded && <p className="pulse-reach-hint">{goalkeeperRating(keeperId)! >= 90 ? t.reachAnyPrompt : t.reachPrompt} {guard !== null && <button type="button" onClick={() => { setGuard(null); setReach(null); }}>{t.resetPosition}</button>}</p>}
       {(picking || defending || shooting) && <button type="button" className="pulse-action" disabled={busy || !!replay || picking && (selectedShooter === null || selectedKeeper === null) || defending && (guard === null || reachNeeded && reach === null) || shooting && aim === null}
         onClick={() => void send()}>{picking ? t.confirmPlayer : defending ? t.dive : t.shoot}<span aria-hidden="true">↗</span></button>}

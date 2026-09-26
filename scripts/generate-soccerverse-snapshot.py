@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 
 EXPECTED_SHA = 'd8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e'
-FEATURED = [1100, 278, 154, 874, 129718, 1, 2, 3]
+FEATURED = [(184, 'striker'), (874, 'striker'), (1917, 'striker'),
+            (19465, 'keeper'), (1438, 'keeper'), (62, 'keeper')]
 ROOT = Path(__file__).resolve().parents[1]
 
 parser = argparse.ArgumentParser()
@@ -35,5 +36,6 @@ for shard in range(max(players) // 32768 + 1):
     (ROOT / f'public/players/{shard}.json').write_text(
         json.dumps(names, ensure_ascii=False, separators=(',', ':')))
 (ROOT / 'src/lib/pulse/featured.json').write_text(
-    json.dumps([{'id': i, 'name': players[i]} for i in FEATURED], ensure_ascii=False, indent=2) + '\n')
+    json.dumps([{'id': i, 'name': players[i], 'role': role} for i, role in FEATURED],
+               ensure_ascii=False, indent=2) + '\n')
 print(f'{len(players)} player IDs, {len(bits)} bitset bytes, {max(players)//32768+1} name shards')

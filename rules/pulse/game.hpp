@@ -36,6 +36,8 @@ struct State {
 };
 
 bool playerExists(std::uint32_t id);
+bool isCentreForward(std::uint32_t id);
+bool isGoalkeeper(std::uint32_t id);
 std::uint8_t shootingRating(std::uint32_t id); // 255 means unavailable.
 std::uint8_t goalkeeperRating(std::uint32_t id); // 255 means unavailable.
 std::uint8_t scoringTargetCount(std::uint32_t id);

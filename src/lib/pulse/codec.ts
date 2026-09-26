@@ -2,6 +2,7 @@ import { shootingRating } from './shooting-data';
 import { goalkeeperRating } from './goalkeeping-data';
 export { shootingRating } from './shooting-data';
 export { goalkeeperRating } from './goalkeeping-data';
+export { isCentreForward, isGoalkeeper } from './positions-data';
 
 export interface PulseState {
   participants: number;

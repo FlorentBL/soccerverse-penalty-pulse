@@ -28,10 +28,10 @@ std::array<std::uint8_t, 9> pick(std::uint32_t shooter, std::uint32_t keeper) {
   return out;
 }
 int main() {
-  constexpr std::uint32_t shooters0[3] = {184, 1460, 159};
+  constexpr std::uint32_t shooters0[3] = {184, 874, 1917};
   constexpr std::uint32_t keepers0[3] = {19465, 1438, 62};
-  constexpr std::uint32_t shooters1[3] = {1100, 129718, 21};
-  constexpr std::uint32_t keepers1[3] = {22221, 2932, 189};
+  constexpr std::uint32_t shooters1[3] = {874, 1917, 184};
+  constexpr std::uint32_t keepers1[3] = {1438, 62, 19465};
   for (int mode = 0; mode < 2; ++mode) {
     State s; initial(2, nullptr, 0, s);
     std::cout << "mode " << mode << '\n';

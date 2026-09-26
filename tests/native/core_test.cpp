@@ -103,34 +103,37 @@ int main() {
   assert(initial(1, nullptr, 0, s) && valid(s) && whoseTurn(s) == -1);
   assert(initial(2, nullptr, 0, s));
   assert(playerExists(184) && playerExists(19465) && !playerExists(0));
+  assert(isCentreForward(184) && isCentreForward(874) && isCentreForward(1917));
+  assert(!isCentreForward(159) && !isCentreForward(1460));
+  assert(isGoalkeeper(19465) && isGoalkeeper(62) && !isGoalkeeper(184));
   assert(shootingRating(184) == 97 && goalkeeperRating(184) == 50);
-  assert(shootingRating(159) == 58 && goalkeeperRating(19465) == 95);
-  assert(scoringTargetCount(184) == 8 && scoringTargetCount(159) == 3);
-  assert(ratingTier(shootingRating(184)) == 0 && ratingTier(shootingRating(1460)) == 1 &&
-         ratingTier(shootingRating(159)) == 2);
-  assert(canReach(19465, 184) && !canReach(19465, 159));
+  assert(shootingRating(1917) == 59 && goalkeeperRating(19465) == 95);
+  assert(scoringTargetCount(184) == 8 && scoringTargetCount(1917) == 3);
+  assert(ratingTier(shootingRating(184)) == 0 && ratingTier(shootingRating(874)) == 1 &&
+         ratingTier(shootingRating(1917)) == 2);
+  assert(canReach(19465, 184) && !canReach(19465, 1917));
   assert(validReach(19465, 184, 0, 8) && !validReach(1438, 184, 0, 8));
   assert(validReach(1438, 184, 0, 4) && validReach(62, 184, 0, 255) &&
          !validReach(62, 184, 0, 4));
   assert(adjacent(0, 4) && !adjacent(0, 8) && !adjacent(0, 0));
-  pair(s, 184, 19465, 1100, 22221, 1);
+  pair(s, 184, 19465, 874, 1438, 1);
   kick(s, true, 2);
   kick(s, false, 3);
   assert(s.goals[0] == 1 && s.goals[1] == 0);
   assert(s.phase == PICK_COMMIT && s.turnCount == 9);
   State early; assert(initial(2, nullptr, 0, early));
-  pair(early, 184, 19465, 1100, 22221, 11);
+  pair(early, 184, 19465, 874, 1438, 11);
   kick(early, true, 15); kick(early, false, 16);
-  pair(early, 1460, 1438, 129718, 2932, 12);
+  pair(early, 874, 1438, 1917, 62, 12);
   kick(early, true, 17); kick(early, false, 18);
   assert(early.phase == FINISHED && early.winner == 0 && early.turnCount == 18);
   State sudden; assert(initial(2, nullptr, 0, sudden));
   for (int k = 0; k < 8; ++k) {
     if (k % 2 == 0) {
-      const std::uint32_t shooters0[3] = {184, 1460, 159};
+      const std::uint32_t shooters0[3] = {184, 874, 1917};
       const std::uint32_t keepers0[3] = {19465, 1438, 62};
-      const std::uint32_t shooters1[3] = {1100, 129718, 21};
-      const std::uint32_t keepers1[3] = {22221, 2932, 189};
+      const std::uint32_t shooters1[3] = {874, 1917, 184};
+      const std::uint32_t keepers1[3] = {1438, 62, 19465};
       const int round = k / 2 < 3 ? k / 2 : 0;
       pair(sudden, shooters0[round], keepers0[round], shooters1[round], keepers1[round], std::uint8_t(k + 21));
     }
@@ -140,10 +143,10 @@ int main() {
   State cap; assert(initial(2, nullptr, 0, cap));
   for (int k = 0; k < 254; ++k) {
     if (k % 2 == 0) {
-      const std::uint32_t shooters0[3] = {184, 1460, 159};
+      const std::uint32_t shooters0[3] = {184, 874, 1917};
       const std::uint32_t keepers0[3] = {19465, 1438, 62};
-      const std::uint32_t shooters1[3] = {1100, 129718, 21};
-      const std::uint32_t keepers1[3] = {22221, 2932, 189};
+      const std::uint32_t shooters1[3] = {874, 1917, 184};
+      const std::uint32_t keepers1[3] = {1438, 62, 19465};
       const int round = k / 2 < 3 ? k / 2 : 0;
       pair(cap, shooters0[round], keepers0[round], shooters1[round], keepers1[round], std::uint8_t(k));
     }
@@ -151,18 +154,23 @@ int main() {
   }
   assert(cap.phase == FINISHED && cap.kick == 254 && cap.winner == 0);
   State repeat; assert(initial(2, nullptr, 0, repeat));
-  pair(repeat, 184, 19465, 1100, 22221, 4);
+  pair(repeat, 184, 19465, 874, 1438, 4);
   kick(repeat, false, 5); kick(repeat, false, 6);
-  assert(move(repeat, pickCommit(1, 909, 1438, salt(7))));
-  assert(move(repeat, pick(1460, 2932)));
-  assert(!move(repeat, pickReveal(909, 1438, salt(7))));
+  assert(move(repeat, pickCommit(1, 184, 1438, salt(7))));
+  assert(move(repeat, pick(1917, 62)));
+  assert(!move(repeat, pickReveal(184, 1438, salt(7))));
   State invalid; assert(initial(2, nullptr, 0, invalid));
   assert(move(invalid, pickCommit(0, 184, 19465, salt(8))));
   assert(!move(invalid, pick(19465, 19465)));
+  assert(!move(invalid, pick(159, 1438)));
+  assert(!move(invalid, pick(1460, 1438)));
+  assert(!move(invalid, pick(874, 184)));
   assert(!move(invalid, pick(1, 1438)));
+  assert(!move(invalid, pick(1100, 1438)));  // FC, but outside the fixed roster.
+  assert(!move(invalid, pick(874, 22221)));  // GK, but outside the fixed roster.
   State miss; assert(initial(2, nullptr, 0, miss));
-  pair(miss, 159, 62, 184, 1438, 9);
-  std::uint8_t wide = 0; while (isScoringTarget(159, wide)) ++wide;
+  pair(miss, 1917, 62, 184, 1438, 9);
+  std::uint8_t wide = 0; while (isScoringTarget(1917, wide)) ++wide;
   const auto secret = salt(42);
   const auto g = std::uint8_t((wide + 1) % 9);
   assert(move(miss, guardCommit(0, g, 255, secret)));
