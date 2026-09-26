@@ -94,6 +94,8 @@ describe('Penalty Pulse one-penalty touch flow', () => {
     expect(screen.getByTestId('pulse-shot-replay')).toHaveClass('pulse-replay-goal');
     act(() => vi.advanceTimersByTime(1900));
     expect(screen.getByRole('status')).toHaveTextContent('GOAL');
+    expect(screen.getByRole('status')).toHaveTextContent('Harry Kane');
+    expect(document.querySelector('.pulse-last')).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Penalty goal' })).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.pulse-score-side strong' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Continue/i }));

@@ -211,7 +211,11 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       <div className={'pulse-score-side pulse-score-away ' + (!preview && localPlayerIndex === 1 ? 'mine' : '')}><small>{preview ? 'P2' : localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{shownGoals[1]}</strong></div>
     </div>
     {showOutcome && <section className={'pulse-outcome pulse-outcome-' + game.lastResult} role="status" aria-live="assertive">
-      <div><small>{t.penaltyResult}</small><strong>{result}</strong><span>{t.outcomePrompt}</span></div>
+      <div><small>{t.penaltyResult}</small><strong>{result}</strong><span className="pulse-outcome-matchup">
+        {featuredPlayers.find(p => p.id === game.lastPlayer)?.name ?? '#' + game.lastPlayer}
+        <em>VS</em>
+        {featuredPlayers.find(p => p.id === game.lastKeeper)?.name ?? '#' + game.lastKeeper}
+      </span></div>
       <button type="button" onClick={() => setResultAckKick(null)}>{t.continueGame} <span aria-hidden="true">→</span></button>
     </section>}
     <section className="pulse-arena" aria-label="Penalty goal" ref={arenaRef}>
@@ -291,7 +295,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       {defending && reachNeeded && <p className="pulse-reach-hint">{goalkeeperRating(keeperId)! >= 90 ? t.reachAnyPrompt : t.reachPrompt} {guard !== null && <button type="button" onClick={() => { setGuard(null); setReach(null); }}>{t.resetPosition}</button>}</p>}
       {!showOutcome && (picking || defending || shooting) && <button type="button" className="pulse-action" disabled={busy || !!replay || pickingShooter && selectedShooter === null || pickingKeeper && selectedKeeper === null || defending && (guard === null || reachNeeded && reach === null) || shooting && (aim === null || !allowed.includes(aim))}
         onClick={() => void send()}>{pickingShooter ? t.confirmShooter : pickingKeeper ? t.confirmKeeper : defending ? t.dive : t.shoot}<span aria-hidden="true">↗</span></button>}
-      {!!game?.kick && !replay && <div className="pulse-last" aria-live="polite"><span>{t.result}</span><strong>{result}</strong></div>}
+      {!!game?.kick && !replay && !showOutcome && <div className="pulse-last" aria-live="polite"><span>{t.result}</span><strong>{result}</strong></div>}
       {error && <p role="alert" className="pulse-error">{error}</p>}
     </section>
     <footer>{t.snapshot}</footer>
