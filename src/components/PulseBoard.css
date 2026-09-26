@@ -129,6 +129,12 @@
 .pulse-step-index { color: var(--lime); font-family: Impact, 'Arial Narrow', sans-serif; font-size: 44px; font-style: italic; line-height: .9; }
 .pulse-step small, .pulse-featured > small { display: block; color: #a1c3a9; font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
 .pulse-step p { margin: 5px 0 0; color: #f5f8eb; font-size: clamp(15px, 1.4vw, 19px); font-weight: 800; line-height: 1.19; letter-spacing: -.025em; }
+.pulse-role-plan { padding: 10px; border: 1px solid #b1d6837a; background: linear-gradient(105deg, #254836c9, #102d25d9); }
+.pulse-role-plan > span { color: #d9fb74; font-size: 10px; font-weight: 950; letter-spacing: .15em; }
+.pulse-role-plan ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 7px 0 0; padding: 0; list-style: none; }
+.pulse-role-plan li { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 38px; padding: 6px 8px; border: 1px solid #a4c8955c; color: #e6f3d8; background: #0a2b21; font-size: 10px; font-weight: 900; line-height: 1.2; letter-spacing: .04em; }
+.pulse-role-plan li b { color: #d9fb74; font: italic 20px Impact, 'Arial Narrow', sans-serif; }
+.pulse-role-plan li.active { border-color: #dcff88; background: #416b39; box-shadow: inset 0 0 18px #d9fb7422, 0 0 14px #d9fb742e; }
 .pulse-picker { display: flex; flex-direction: column; gap: 10px; }
 .pulse-picker label { color: #c0dbbd; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
 .pulse-search { display: flex; gap: 8px; }
@@ -173,7 +179,7 @@
   .pulse-root.pulse-replaying:has(.pulse-picker) .pulse-spot { display: grid; }
   .pulse-replay-result { top: 69%; font-size: clamp(36px, 11vw, 56px); }
 }
-@media (max-width: 390px) { .pulse-root { padding: 10px; }.pulse-free { padding: 6px; font-size: 8px; }.pulse-kicker { font-size: 8px; }.pulse-arena { min-height: 274px; padding: 66px 12px 0; }.pulse-goal { height: 148px; }.pulse-console { padding: 14px; }.pulse-goal-legend { right: 12px; font-size: 8px; letter-spacing: .03em; } }
+@media (max-width: 390px) { .pulse-root { padding: 10px; }.pulse-free { padding: 6px; font-size: 8px; }.pulse-kicker { font-size: 8px; }.pulse-arena { min-height: 274px; padding: 66px 12px 0; }.pulse-goal { height: 148px; }.pulse-console { padding: 14px; }.pulse-goal-legend { right: 12px; font-size: 8px; letter-spacing: .03em; }.pulse-role-plan li { gap: 5px; padding: 5px; font-size: 9px; }.pulse-role-plan li b { font-size: 17px; } }
 @media (prefers-reduced-motion: reduce) { .pulse-root *, .pulse-root *::before, .pulse-root *::after { transition-duration: 0.01ms!important; animation-duration: 0.01ms!important; } }
 
 .pulse-zone.pulse-reach { box-shadow: inset 0 0 0 3px #d9ff75, 0 0 28px #c9ff6070; }

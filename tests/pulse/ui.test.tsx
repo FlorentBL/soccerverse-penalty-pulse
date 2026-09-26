@@ -22,17 +22,23 @@ function setup() {
 }
 afterEach(() => { submit.mockClear(); act(() => useChannelStore.setState({ boardState: null })); vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe('Penalty Pulse touch flow', () => {
-  it('offers three strikers and three keepers and lets P1 select a player', async () => {
+  it('explains both roles and their order before locking a player', async () => {
     setup();
     useChannelStore.getState().updateFromBoardState(board(1, 1));
     render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
-    expect(screen.getByText(/choose one soccerverse player for this round/i)).toBeInTheDocument();
+    expect(screen.getByText(/choose one soccerverse player for both penalties/i)).toBeInTheDocument();
+    expect(screen.getByText('ONE PLAYER · TWO ROLES')).toBeInTheDocument();
+    const roles = screen.getAllByRole('listitem');
+    expect(roles[0]).toHaveTextContent('01GUARD THEIR PENALTY');
+    expect(roles[1]).toHaveTextContent('02TAKE YOUR PENALTY');
+    expect(screen.getByText('STRONG SHOOTING')).toBeInTheDocument();
+    expect(screen.getByText('STRONG GOALKEEPING')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /David Raya Martin/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Harry Kane/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /David Raya Martin/i }));
     await waitFor(() => expect(screen.getByText('#19465')).toBeInTheDocument());
     expect(screen.getByText(/keeper focus/i)).toBeInTheDocument();
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Confirm player/i })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Lock player for both roles/i })));
     expect(submit).toHaveBeenCalledWith({ type: 'pick', kick: 0, playerId: 19465 });
   });
   it('lets a strong goalkeeper choose primary and adjacent reach', async () => {
@@ -40,6 +46,8 @@ describe('Penalty Pulse touch flow', () => {
     useChannelStore.getState().updateFromBoardState({ ...board(3, 1), pairPlayers: [1100, 19465] });
     render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
     await waitFor(() => expect(screen.getByText('#19465')).toBeInTheDocument());
+    expect(screen.getByText(/chosen player is now in goal/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')[0]).toHaveAttribute('aria-current', 'step');
     expect(screen.getByText(/second adjacent zone/i)).toBeInTheDocument();
     expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '4');
     fireEvent.click(screen.getByRole('button', { name: 'HIGH LEFT' }));

@@ -158,8 +158,11 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
     (game.phase === 2 || game.phase === 5) ? t.revealPrompt : picking ? t.pickPrompt : defending ? t.guardPrompt : shooting ? t.shotPrompt : t.waiting;
   const displayId = defending || shooting ? game?.pairPlayers[localPlayerIndex] || null : playerId;
   const allowed = picking && displayId ? scoringTargets(displayId) : strikerId ? scoringTargets(strikerId) : [];
-  const roleLabel = defending ? t.keeper : picking || shooting ? t.striker : t.result;
+  const roleLabel = picking ? t.bothRoles : defending ? t.keeper : shooting ? t.striker : t.result;
   const phaseLabel = replay ? t.result : preview && (picking || defending || shooting) ? `P${localPlayerIndex + 1} / ${roleLabel}` : roleLabel;
+  const roleOrder = localPlayerIndex === 0 ? (['shoot', 'save'] as const) : (['save', 'shoot'] as const);
+  const activeRole = defending ? 'save' : shooting ? 'shoot' : null;
+  const stepNumber = picking ? '01' : activeRole === roleOrder[0] ? '02' : activeRole === roleOrder[1] ? '03' : 'FT';
   const lastKeeper = game && game.kick > 0 && (finished || game.phase === 0 && playerId === null) && game.lastGuard <= 8 ?
     game.lastResult === 2 && game.lastReach === game.lastShot ? game.lastShot : game.lastGuard : null;
   const keeperSpot = replay ? replay.guard : defending ? guard ?? 4 : lastKeeper;
@@ -226,15 +229,22 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       <div className="pulse-pitch-line" />
     </section>
     <section className="pulse-console">
-      <div className="pulse-step"><span className="pulse-step-index">{game?.phase === 0 || game?.phase === 1 ? '01' : game?.phase === 3 ? '02' : game?.phase === 4 ? '03' : 'FT'}</span>
+      <div className="pulse-step"><span className="pulse-step-index">{stepNumber}</span>
         <div><small>{phaseLabel}</small><p aria-live="polite">{instructions}</p></div></div>
+      {(picking || defending || shooting) && <div className="pulse-role-plan">
+        <span>{t.onePlayerTwoRoles}</span>
+        <ol>{roleOrder.map((role, index) => <li key={role} className={activeRole === role ? 'active' : ''}
+          aria-current={activeRole === role ? 'step' : undefined}>
+          <b>{String(index + 1).padStart(2, '0')}</b>{role === 'shoot' ? t.shootRole : t.saveRole}
+        </li>)}</ol>
+      </div>}
       {picking && <div className="pulse-picker">
         <label htmlFor="pulse-player-id">{t.playerId}</label>
         <div className="pulse-search"><input id="pulse-player-id" type="number" min="1" max="523571" inputMode="numeric" value={lookup}
           onChange={e => setLookup(e.target.value)} placeholder="1100" />
           <button type="button" disabled={!!replay} onClick={() => void selectPlayer(Number(lookup))}>{t.search}</button></div>
         <div className="pulse-featured"><small>{t.featured}</small>{(['striker', 'keeper'] as const).map(role =>
-          <div className="pulse-featured-group" key={role}><span>{role === 'striker' ? t.striker : t.keeper}</span><div>{featuredPlayers.filter(p => p.role === role).map((p, index) =>
+          <div className="pulse-featured-group" key={role}><span>{role === 'striker' ? t.shootingProfiles : t.keepingProfiles}</span><div>{featuredPlayers.filter(p => p.role === role).map((p, index) =>
             <button type="button" key={p.id} disabled={!!replay || used.includes(p.id)} className={playerId === p.id ? 'active' : ''}
               onClick={() => void selectPlayer(p.id)}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{p.name}<b>{t.shootingRating} {shootingRating(p.id)} · {t.keeper} {goalkeeperRating(p.id)}</b></button>)}</div></div>)}</div>
       </div>}
