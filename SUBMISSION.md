@@ -21,13 +21,13 @@
 
 - Local repository: `/Users/fbl/Documents/soccerverse-penalty-pulse`
 - Remote Git URL: `https://github.com/FlorentBL/soccerverse-penalty-pulse` (private during playground testing)
-- Tested game commit SHA: `33c256537c58d9e98556bdd6f67867be1d2e9140`
+- Tested game commit SHA: `eb5ee1d85dfb3c2cb4942b84a75dd8a4a0e423bc`
 - WASM path: `blob/rules.wasm`
 - WASM SHA-256: `8fc60bb14f387220561c44143d9c547106b8dfa582bbd1be35068fbb2e4cce40`
 - State encoding: version 5, fixed 127 bytes
 - Bundle path: `dist/bundle.tar.gz` (generated locally, ignored by Git)
-- Attached playground bundle SHA-256: `6f93b4fe1f8fd62b51a3ac76a3e91f08d32207b8808a162d8cf8cc5dfaa09b5d` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host supplies runtime relay, GSP and Polygon endpoints; the local export intentionally uses blank endpoint variables.
-- Playground update: `20260926-200721-penalty-pulse-3c7d`; [status](https://test-arcade.xaya.io/api/submissions/20260926-200721-penalty-pulse-3c7d), [play](https://test-arcade.xaya.io/play/penalty-pulse). The 2026-09-26 green-only resubmission used the existing reclaim token. Preflight reported only the expected reclaim warning. Auto-accept completed every step (`reclaim`, `preflight`, `slots`, `bake`, `onchain`, `register`, `content`, `verify`, `accepted`). This is the disposable test chain, not a public Arcade submission.
+- Attached playground bundle SHA-256: `e309bb634da21bd5a30af3ea6e5799c3df14a7f429ff58a46f2daa4f9af73f35` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host supplies runtime relay, GSP and Polygon endpoints; the local export intentionally uses blank endpoint variables.
+- Playground update: `20260926-201545-penalty-pulse-5091`; [status](https://test-arcade.xaya.io/api/submissions/20260926-201545-penalty-pulse-5091), [play](https://test-arcade.xaya.io/play/penalty-pulse). The 2026-09-26 result-layout resubmission used the existing reclaim token. Preflight reported only the expected reclaim warning. Auto-accept completed every step (`reclaim`, `preflight`, `slots`, `bake`, `onchain`, `register`, `content`, `verify`, `accepted`). This is the disposable test chain, not a public Arcade submission.
 - Source datapack SHA-256: `d8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e`
 - Soccerverse shooting table SHA-256: `fe0eb9c810a27f17f6ad605ee29669449774bc2a55603e0cfaa6c1e1065abfd6`
 - Soccerverse goalkeeper table SHA-256: `e615569b6699fdc1dbdb3bfd0bf0b0ec1f3b514ee006e3e71fb2a9e849dc60f2`
@@ -42,7 +42,7 @@
 - Native C++ rules: sequential shooter/keeper selection, per-role tier use, keeper reach, rejection of shots outside green zones, invalid/repeated selections, invalid reveals, early decision, paired sudden death, timeout and 254-kick technical cap. Fixed native traces pass.
 - WASM judge: the early-decision and sudden-death traces replay byte for byte; malformed cfg/state/moves, invalid moves, goalkeeper reach, and timeout checks pass. `blob/check-blob.sh --strict` confirms 14 expected exports, zero imports and the pinned WASM toolchain fingerprint.
 - React: eight UI flow tests plus local preview and SDK secret-persistence tests, 22 Vitest tests total; TypeScript checks, SDK CSS check and static bundle build pass. The interface tests check the sequential roles, disabled dark shot zones and a result that remains visible until Continue.
-- Browser: the wallet-free hotseat preview was played through P1 choosing Kane, P2 choosing Horvath and positioning the keeper. At 320 × 640, Kane's dark zone 01 was disabled; attempting to click it left the shot unselected and the Take Shot button disabled. A green zone 02 shot then scored and displayed the full cage, 1–0 score, GOAL and Continue. This is a local preview; the playground bundle still needs a live two-player mobile check inside the Arcade shell.
+- Browser: the wallet-free hotseat preview was played through P1 choosing Kane, P2 choosing Horvath and positioning the keeper. At 320 × 640, Kane's dark zone 01 was disabled; attempting to click it left the shot unselected and the Take Shot button disabled. A green zone 02 shot then scored and displayed the full cage, 1–0 score, GOAL and Continue. The result was visually checked at 320 × 640 and 1440 × 900: the desktop banner is 77 px tall with the cage and next role visible beneath it; the mobile banner is 113 px tall, does not collapse, and has no horizontal overflow. This is a local preview; the playground bundle still needs a live two-player mobile check inside the Arcade shell.
 
 ## Required before submission
 
