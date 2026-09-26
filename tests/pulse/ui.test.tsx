@@ -74,6 +74,9 @@ describe('Penalty Pulse one-penalty touch flow', () => {
     render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
     expect(screen.getByText(/Harry Kane/i)).toBeInTheDocument();
     expect(screen.queryByTestId('pulse-keeper')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'HIGH LEFT' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'HIGH LEFT' })).toHaveClass('unavailable-shot');
+    expect(screen.getByRole('button', { name: /Take shot/i })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'HIGH RIGHT' }));
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Take shot/i })));
     expect(submit).toHaveBeenCalledWith({ type: 'shot', kick: 0, lane: 2 });

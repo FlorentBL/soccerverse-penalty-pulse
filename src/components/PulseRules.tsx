@@ -18,7 +18,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     steps: [
       { number: '01', title: 'Choose your duo', body: 'On your turn to shoot, choose one of your three FC shooters. Your opponent then chooses one of their three GK keepers. They place the keeper secretly, and you aim the shot. On the next penalty, you swap roles. Across regulation, use each 90+, 75–89 and 55–74 choice once in each role.' },
       { number: '02', title: 'Read the goal', body: 'There are nine numbered zones. Green zones are where this shooter can score. Both players see the exact same green zones before the keeper chooses a position.' },
-      { number: '03', title: 'Dive, then shoot', body: 'The defender secretly places the keeper. The shooter then aims at one zone without seeing that choice. A covered shot is saved; an uncovered green zone is a goal; any other shot goes wide.' },
+      { number: '03', title: 'Dive, then shoot', body: 'The defender secretly places the keeper. The shooter then chooses one green zone without seeing that position. Dark zones cannot be selected. A covered shot is saved; an uncovered shot is a goal.' },
       { number: '04', title: 'Win the shootout', body: 'Players alternate kicks. The match ends early if the trailing player cannot catch up. A tie after three kicks each goes to paired sudden death; players and bands can then be reused.' },
     ],
     shotTitle: 'SHOOTER · RELIABLE ZONES', shotText: 'Official Soccerverse shooting rating sets how many of the nine zones are green.',
@@ -32,7 +32,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     steps: [
       { number: '01', title: 'Choisissez votre duo', body: 'Quand c’est à vous de tirer, choisissez un des trois tireurs FC. Votre adversaire choisit ensuite un des trois gardiens GK, puis place secrètement ce gardien. Vous visez le tir. Au penalty suivant, les rôles s’inversent. Pendant les tirs réglementaires, utilisez une fois chaque niveau 90+, 75–89 et 55–74 dans chaque rôle.' },
       { number: '02', title: 'Lisez la cage', body: 'La cage comporte neuf cases numérotées. Les cases vertes sont celles où ce tireur peut marquer. Les deux joueurs voient exactement les mêmes cases avant que le gardien se place.' },
-      { number: '03', title: 'Plongez, puis tirez', body: 'Le défenseur place secrètement son gardien. Le tireur vise ensuite une case sans voir ce choix. Un tir couvert est arrêté ; une case verte non couverte donne un but ; ailleurs, le tir sort.' },
+      { number: '03', title: 'Plongez, puis tirez', body: 'Le défenseur place secrètement son gardien. Le tireur choisit une case verte sans voir sa position. Les cases sombres ne peuvent pas être choisies. Un tir couvert est arrêté ; sinon, c’est un but.' },
       { number: '04', title: 'Gagnez la séance', body: 'Les joueurs tirent à tour de rôle. La partie finit plus tôt si le retard ne peut plus être rattrapé. Après trois tirs chacun, une égalité mène à une mort subite par paires ; les joueurs et niveaux peuvent alors être réutilisés.' },
     ],
     shotTitle: 'TIREUR · CASES FIABLES', shotText: 'La note de tir officielle Soccerverse détermine combien des neuf cases sont vertes.',
@@ -46,7 +46,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     steps: [
       { number: '01', title: 'Scegli la coppia', body: 'Quando tocca a te tirare, scegli uno dei tre tiratori FC. Il rivale sceglie uno dei tre portieri GK e lo posiziona in segreto. Poi miri il tiro. Al rigore seguente i ruoli si scambiano. Durante i tiri regolamentari usa una volta ogni fascia 90+, 75–89 e 55–74 per ciascun ruolo.' },
       { number: '02', title: 'Leggi la porta', body: 'La porta ha nove zone numerate. Le zone verdi sono quelle in cui il tiratore può segnare. Entrambi vedono le stesse zone prima che il portiere scelga la posizione.' },
-      { number: '03', title: 'Tuffati, poi tira', body: 'Il difensore posiziona il portiere in segreto. Il tiratore mira a una zona senza vedere la scelta. Un tiro coperto è parato; una zona verde scoperta è gol; altrove il tiro va fuori.' },
+      { number: '03', title: 'Tuffati, poi tira', body: 'Il difensore posiziona il portiere in segreto. Il tiratore sceglie una zona verde senza vedere la sua posizione. Le zone scure non si possono scegliere. Un tiro coperto è parato; altrimenti è gol.' },
       { number: '04', title: 'Vinci la sfida', body: 'I giocatori tirano a turno. La partita termina prima se chi perde non può più recuperare. Dopo tre tiri a testa, il pareggio porta all’oltranza a coppie; giocatori e fasce possono essere riutilizzati.' },
     ],
     shotTitle: 'TIRATORE · ZONE AFFIDABILI', shotText: 'Il valore di tiro ufficiale Soccerverse determina quante delle nove zone sono verdi.',
@@ -60,7 +60,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     steps: [
       { number: '01', title: 'Elige tu pareja', body: 'Cuando te toca tirar, elige uno de los tres lanzadores FC. Tu rival elige uno de los tres porteros GK y lo coloca en secreto. Luego apuntas el tiro. En el siguiente penalti intercambiáis roles. Durante la tanda reglamentaria usa una vez cada nivel 90+, 75–89 y 55–74 por rol.' },
       { number: '02', title: 'Lee la portería', body: 'La portería tiene nueve zonas numeradas. Las zonas verdes son aquellas donde el lanzador puede marcar. Ambos ven las mismas zonas antes de que el portero elija su posición.' },
-      { number: '03', title: 'Salta y dispara', body: 'El defensor coloca al portero en secreto. Después el lanzador apunta a una zona sin ver esa elección. Un tiro cubierto se para; una zona verde libre es gol; en otra zona el tiro se va fuera.' },
+      { number: '03', title: 'Salta y dispara', body: 'El defensor coloca al portero en secreto. El lanzador elige una zona verde sin ver su posición. Las zonas oscuras no se pueden elegir. Un tiro cubierto se para; si queda libre, es gol.' },
       { number: '04', title: 'Gana la tanda', body: 'Los jugadores tiran por turnos. El partido termina antes si quien pierde ya no puede alcanzar al rival. Tras tres tiros cada uno, el empate lleva a muerte súbita por parejas; se pueden reutilizar jugadores y niveles.' },
     ],
     shotTitle: 'LANZADOR · ZONAS FIABLES', shotText: 'La nota oficial de tiro Soccerverse determina cuántas de las nueve zonas son verdes.',
@@ -74,7 +74,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     steps: [
       { number: '01', title: 'Escolha a dupla', body: 'Quando for a sua vez de rematar, escolha um dos três marcadores FC. O adversário escolhe um dos três guarda-redes GK e posiciona-o em segredo. Depois aponta o remate. No penálti seguinte, trocam de papéis. Na fase regulamentar use uma vez cada nível 90+, 75–89 e 55–74 por papel.' },
       { number: '02', title: 'Leia a baliza', body: 'A baliza tem nove zonas numeradas. As zonas verdes são as que permitem marcar. Ambos veem exatamente as mesmas zonas antes de o guarda-redes escolher a posição.' },
-      { number: '03', title: 'Mergulhe e remate', body: 'O defensor posiciona o guarda-redes em segredo. Depois o marcador aponta para uma zona sem ver essa escolha. Um remate coberto é defendido; uma zona verde livre dá golo; noutra zona o remate sai.' },
+      { number: '03', title: 'Mergulhe e remate', body: 'O defensor posiciona o guarda-redes em segredo. O marcador escolhe uma zona verde sem ver a posição. As zonas escuras não podem ser escolhidas. Um remate coberto é defendido; se ficar livre, é golo.' },
       { number: '04', title: 'Vença a disputa', body: 'Os jogadores rematam à vez. O jogo acaba cedo se quem perde já não puder recuperar. Após três remates cada, um empate leva a morte súbita por pares; jogadores e níveis podem ser reutilizados.' },
     ],
     shotTitle: 'MARCADOR · ZONAS FIÁVEIS', shotText: 'A nota oficial de remate Soccerverse define quantas das nove zonas são verdes.',

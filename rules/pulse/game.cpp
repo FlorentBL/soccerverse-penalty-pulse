@@ -138,7 +138,7 @@ bool initial(std::uint8_t participants, const std::uint8_t*, std::size_t cfgLeng
 
 std::array<std::uint8_t, STATE_SIZE> encode(const State& s) {
   std::array<std::uint8_t, STATE_SIZE> b{};
-  b[0] = 4; b[1] = s.participants; b[2] = s.phase; b[3] = s.turn;
+  b[0] = 5; b[1] = s.participants; b[2] = s.phase; b[3] = s.turn;
   b[4] = s.kick; b[5] = s.goals[0]; b[6] = s.goals[1];
   b[7] = static_cast<std::uint8_t>(s.winner);
   b[8] = std::uint8_t(s.turnCount); b[9] = std::uint8_t(s.turnCount >> 8);
@@ -164,7 +164,7 @@ std::array<std::uint8_t, STATE_SIZE> encode(const State& s) {
 }
 
 bool decode(const std::uint8_t* b, std::size_t n, std::uint8_t participants, State& s) {
-  if (!b || n != STATE_SIZE || b[0] != 4 || b[1] != participants) return false;
+  if (!b || n != STATE_SIZE || b[0] != 5 || b[1] != participants) return false;
   s.participants = b[1]; s.phase = static_cast<Phase>(b[2]); s.turn = b[3];
   s.kick = b[4]; s.goals[0] = b[5]; s.goals[1] = b[6];
   s.winner = static_cast<std::int8_t>(b[7]);
@@ -191,7 +191,7 @@ bool valid(const State& s) {
   if (s.participants < 1 || s.participants > 2 ||
       (s.phase > REVEAL && s.phase != FINISHED) || s.kick > 254 ||
       s.turnCount > 1270 || s.goals[0] > (s.kick + 1) / 2 ||
-      s.goals[1] > s.kick / 2 || s.lastResult > MISSED ||
+      s.goals[1] > s.kick / 2 || s.lastResult > SAVED ||
       s.pendingShooter || s.pendingKeeper) return false;
   if (s.participants == 1)
     return s.phase == CHOOSE_SHOOTER && s.turn == 255 && !s.kick && !s.turnCount &&
@@ -240,15 +240,15 @@ bool valid(const State& s) {
         s.usedKeepers[seat][completedKeep] != s.pairKeepers[seat]) return false;
   }
   if ((active == SHOOT || active == REVEAL) == allZero(s.commitment) ||
-      (active == REVEAL ? s.pendingLane > 8 : s.pendingLane != 255)) return false;
+      (active == REVEAL ? s.pendingLane > 8 || !isScoringTarget(s.pairShooters[shooterSeat], s.pendingLane) : s.pendingLane != 255)) return false;
   if (s.kick == 0) {
     if (s.lastResult != NONE || s.lastPlayer || s.lastKeeper || s.lastShot != 255 ||
         s.lastGuard != 255 || s.lastReach != 255) return false;
   } else if (s.lastResult == NONE || !validShooter(s.lastPlayer) || !validKeeper(s.lastKeeper) ||
-             s.lastShot > 8 || !validReach(s.lastKeeper, s.lastPlayer, s.lastGuard, s.lastReach)) return false;
+             s.lastShot > 8 || !isScoringTarget(s.lastPlayer, s.lastShot) ||
+             !validReach(s.lastKeeper, s.lastPlayer, s.lastGuard, s.lastReach)) return false;
   if (s.kick > 0) {
-    const auto result = s.lastShot == s.lastGuard || s.lastShot == s.lastReach ? SAVED :
-      isScoringTarget(s.lastPlayer, s.lastShot) ? GOAL : MISSED;
+    const auto result = s.lastShot == s.lastGuard || s.lastShot == s.lastReach ? SAVED : GOAL;
     if (s.lastResult != result) return false;
   }
   return true;
@@ -280,7 +280,8 @@ bool apply(State& s, const std::uint8_t* m, std::size_t n) {
     if (allZero(next.commitment)) return false;
     next.phase = SHOOT; next.turn = shooterSeat;
   } else if (s.phase == SHOOT) {
-    if (n != 2 || m[0] != 2 || m[1] > 8) return false;
+    if (n != 2 || m[0] != 2 || m[1] > 8 ||
+        !isScoringTarget(s.pairShooters[shooterSeat], m[1])) return false;
     next.pendingLane = m[1];
     next.phase = REVEAL; next.turn = defenderSeat;
   } else {
@@ -295,8 +296,7 @@ bool apply(State& s, const std::uint8_t* m, std::size_t n) {
     if (std::memcmp(digest, s.commitment.data(), 32) != 0) return false;
     next.lastPlayer = striker; next.lastKeeper = keeper; next.lastShot = s.pendingLane;
     next.lastGuard = m[1]; next.lastReach = m[2];
-    next.lastResult = m[1] == s.pendingLane || m[2] == s.pendingLane ? SAVED :
-      (isScoringTarget(striker, s.pendingLane) ? GOAL : MISSED);
+    next.lastResult = m[1] == s.pendingLane || m[2] == s.pendingLane ? SAVED : GOAL;
     if (next.lastResult == GOAL) ++next.goals[shooterSeat];
     next.commitment.fill(0); next.pendingLane = 255;
     next.pairShooters[shooterSeat] = 0; next.pairKeepers[defenderSeat] = 0;

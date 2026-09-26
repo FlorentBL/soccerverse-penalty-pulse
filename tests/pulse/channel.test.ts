@@ -58,4 +58,13 @@ describe('sequential selection and goalkeeper commitment', () => {
     expect(reveal?.[1]).toBe(0);
     expect(reveal?.[2]).toBe(1);
   });
+  it('does not send an aim outside the selected shooter’s green zones', async () => {
+    const afterCommit = bytes(trace()[4].split(' ')[1]);
+    const attacker = new PulseChannel(99n);
+    attacker.setPlayerIndex(0);
+    attacker.setPendingInput({ type: 'shot', kick: 0, lane: 0 });
+    expect(await attacker.maybeAutoMove(state(afterCommit, 0))).toBeNull();
+    attacker.setPendingInput({ type: 'shot', kick: 0, lane: 1 });
+    expect(await attacker.maybeAutoMove(state(afterCommit, 0))).toEqual(Uint8Array.of(2, 1));
+  });
 });

@@ -1,5 +1,5 @@
 import type { ArcadeChannel, BoardMoveBytes, ParsedBoardState } from '@xayaarcade/sdk';
-import { decodeState, encodeCommit, encodeKeeper, encodeReveal, encodeShooter, encodeShot, goalkeeperRating, ratingTier, shootingRating, tierUsed, validReach } from './codec';
+import { decodeState, encodeCommit, encodeKeeper, encodeReveal, encodeShooter, encodeShot, goalkeeperRating, ratingTier, scoringTargets, shootingRating, tierUsed, validReach } from './codec';
 import { isRosterShooter, isRosterKeeper } from './players';
 
 export type PulseInput = { type: 'shooter'; kick: number; playerId: number } |
@@ -8,7 +8,7 @@ export type PulseInput = { type: 'shooter'; kick: number; playerId: number } |
   { type: 'shot'; kick: number; lane: number };
 interface GuardSecret { lane: number; reach: number; salt: number[] }
 function key(channelId: bigint | null, seat: number, kick: number): string {
-  return 'penaltypulse:v4:guard:' + String(channelId) + ':' + seat + ':' + kick;
+  return 'penaltypulse:v5:guard:' + String(channelId) + ':' + seat + ':' + kick;
 }
 function validSalt(value: unknown): value is number[] {
   return Array.isArray(value) && value.length === 32 &&
@@ -83,7 +83,8 @@ export class PulseChannel implements ArcadeChannel {
       }
       return encodeCommit(game.kick, secret.lane, secret.reach, new Uint8Array(secret.salt));
     }
-    if (game.phase === 3 && this.seat === shooterSeat && input.type === 'shot') return encodeShot(input.lane);
+    if (game.phase === 3 && this.seat === shooterSeat && input.type === 'shot' &&
+        scoringTargets(game.pairShooters[shooterSeat]).includes(input.lane)) return encodeShot(input.lane);
     return null;
   }
 }

@@ -71,6 +71,13 @@ describe('wallet-free local preview', () => {
     expect(scoringTargets(184)).toHaveLength(8);
     expect(ratingTier(shootingRating(1917))).toBe(2);
   });
+  it('rejects a shot outside the green zones even when the keeper misses it', () => {
+    const state = select(initialPreviewState());
+    expect(scoringTargets(184)).not.toContain(0);
+    const prepared = advancePreview(state, { type: 'guard', kick: 0, lane: 4, reach: 5 }, null);
+    expect(prepared?.state.phase).toBe(3);
+    expect(advancePreview(prepared!.state, { type: 'shot', kick: 0, lane: 0 }, prepared!.keeperChoice)).toBeNull();
+  });
   it('permits only the fixed FC and GK rosters', () => {
     expect(isCentreForward(1917)).toBe(true);
     expect(isGoalkeeper(159)).toBe(true);

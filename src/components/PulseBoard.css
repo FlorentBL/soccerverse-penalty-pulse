@@ -98,6 +98,9 @@
 .pulse-zone.unreachable { cursor: not-allowed; }
 .pulse-zone.unreachable .pulse-zone-target { opacity: .3; box-shadow: none; }
 .pulse-zone.unreachable .pulse-zone-no { opacity: .5; }
+.pulse-zone.unavailable-shot { cursor: not-allowed; background: #03171491; }
+.pulse-zone.unavailable-shot .pulse-zone-target { opacity: .32; box-shadow: none; }
+.pulse-zone.unavailable-shot .pulse-zone-no { opacity: .5; }
 .pulse-zone-no { position: absolute; left: 10px; top: 7px; color: #d1eed2b1; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
 .pulse-zone-target { width: clamp(26px, 3.7vw, 45px); height: clamp(26px, 3.7vw, 45px); display: grid; place-items: center; border: 1px solid #eeffecd1; border-radius: 50%; box-shadow: 0 0 0 5px #ecffe923; color: #faffed; font-size: clamp(15px, 2vw, 23px); font-weight: 650; line-height: 1; }
 .pulse-zone.keeper .pulse-zone-target { font-size: 11px; font-weight: 950; }

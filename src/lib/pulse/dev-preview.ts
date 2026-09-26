@@ -57,11 +57,11 @@ export function advancePreview(
       keeperChoice: { lane: input.lane, reach: input.reach } };
   }
   if (state.phase === 3 && input.type === 'shot' && keeperChoice &&
-      Number.isInteger(input.lane) && input.lane >= 0 && input.lane <= 8) {
+      Number.isInteger(input.lane) && input.lane >= 0 && input.lane <= 8 &&
+      scoringTargets(state.pairShooters[shooter]).includes(input.lane)) {
     const striker = state.pairShooters[shooter];
     const keeper = state.pairKeepers[defender];
-    const result = input.lane === keeperChoice.lane || input.lane === keeperChoice.reach ? 2 :
-      scoringTargets(striker).includes(input.lane) ? 1 : 3;
+    const result = input.lane === keeperChoice.lane || input.lane === keeperChoice.reach ? 2 : 1;
     const goals: [number, number] = [...state.goals];
     if (result === 1) goals[shooter]++;
     const kick = state.kick + 1;

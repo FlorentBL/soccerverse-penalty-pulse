@@ -99,6 +99,8 @@ describe('Penalty Pulse WASM judge', () => {
     const primary = target % 3 < 2 ? target + 1 : target - 1;
     const afterCommit = apply(api, afterKeeper, await encodeCommit(0, primary, target, salt))!;
     expect(decodeState(afterCommit, 2)).toMatchObject({ phase: 3, turn: 0, lastResult: 0 });
+    expect(scoringTargets(184)).not.toContain(0);
+    expect(apply(api, afterCommit, encodeShot(0))).toBeNull();
     const afterShot = apply(api, afterCommit, encodeShot(target))!;
     expect(decodeState(afterShot, 2)).toMatchObject({ phase: 4, turn: 1, lastResult: 0 });
     const caught = apply(api, afterShot, encodeReveal(primary, target, salt))!;

@@ -28,7 +28,7 @@ export interface PulseState {
 }
 
 export function decodeState(bytes: Uint8Array, participants: number): PulseState | null {
-  if (bytes.length !== 127 || bytes[0] !== 4 || bytes[1] !== participants || bytes[2] > 6 || bytes[2] === 5) return null;
+  if (bytes.length !== 127 || bytes[0] !== 5 || bytes[1] !== participants || bytes[2] > 6 || bytes[2] === 5) return null;
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const usedShooters: [number[], number[]] = [
     [v.getUint32(48, true), v.getUint32(52, true), v.getUint32(56, true)],
