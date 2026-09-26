@@ -1,6 +1,7 @@
 'use client';
 
 import { Game } from '@xayaarcade/sdk';
+import type { CSSProperties } from 'react';
 import { LanguagePicker, LanguageProvider, useLanguage } from '@/components/LanguageProvider';
 import { pulseAdapter } from '@/lib/games/pulse-adapter';
 
@@ -12,5 +13,8 @@ function LocalizedGame() {
 }
 
 export default function Home() {
-  return <LanguageProvider><div className="pulse-app-shell"><LanguagePicker /><LocalizedGame /></div></LanguageProvider>;
+  const shellStyle = {
+    '--pulse-stadium': `url("${process.env.NEXT_PUBLIC_BASE_PATH || ''}/art/stadium-night.jpg")`,
+  } as CSSProperties;
+  return <LanguageProvider><div className="pulse-app-shell" style={shellStyle}><LanguagePicker /><LocalizedGame /></div></LanguageProvider>;
 }

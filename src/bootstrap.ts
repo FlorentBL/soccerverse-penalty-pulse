@@ -22,18 +22,15 @@
  *   3. GAME_ID() throws inside the blob load - surfaces as ChannelGame's loadError.
  *   4. ChannelLobby's resolveGameId() throws "No game adapter has been registered".
  */
-import { configureApp, registerAdapter } from '@xayaarcade/sdk';
+import { configureApp, getAdapter, registerAdapter } from '@xayaarcade/sdk';
 import { pulseAdapter } from '@/lib/games/pulse-adapter';
 import { GAME_KEY, MOVE_NS, TITLE, STORAGE_PREFIX } from '@/app-identity';
 
 let done = false;
 
 /**
- * Idempotent. The guard is required, not decorative: configureApp() is a no-op on an
- * identical re-call, but registerAdapter() THROWS on a duplicate id - so without it, the
- * second import path (vitest setup + a component's transitive import; HMR; the RSC and
- * browser graphs in one process) hard-fails with "A game adapter is already registered for
- * gameId 'svpenaltypulse'".
+ * Idempotent. A repeated import keeps the same configuration. During Fast Refresh,
+ * the SDK registry can outlive this module, so the registered adapter is updated in place.
  */
 export function bootstrapApp(): void {
   if (done) return;
@@ -43,7 +40,12 @@ export function bootstrapApp(): void {
     title: TITLE,
     storagePrefix: STORAGE_PREFIX,
   });
-  registerAdapter(GAME_KEY, pulseAdapter);
+  // Fast Refresh re-evaluates this module while the SDK registry stays alive.
+  // Reuse its registered adapter and refresh its methods instead of throwing.
+  let existing: typeof pulseAdapter | null = null;
+  try { existing = getAdapter(GAME_KEY); } catch { /* First registration. */ }
+  if (existing) Object.assign(existing, pulseAdapter);
+  else registerAdapter(GAME_KEY, pulseAdapter);
   done = true;
 }
 

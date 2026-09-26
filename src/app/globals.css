@@ -1,16 +1,35 @@
 @import "tailwindcss";
 @source "../../node_modules/@xayaarcade/sdk/dist";
 @source not "../../scripts";
-:root { --arcade-bg:#081a19; color-scheme:dark; }
-html,body { width:100%; height:100%; height:100dvh; margin:0; overflow:hidden; overscroll-behavior:contain; background:var(--arcade-bg); color:#f7f9ee; }
-* { box-sizing:border-box; }
-.pulse-app-shell { width:100%; height:100%; position:relative; }
-.pulse-language { position:absolute; z-index:50; top:max(7px,env(safe-area-inset-top)); right:max(7px,env(safe-area-inset-right)); display:flex; align-items:center; gap:6px; padding:4px 7px; border:1px solid #93ba99; border-radius:8px; background:#0c3029f0; box-shadow:0 5px 19px #0007; font-size:10px; font-weight:800; color:#ecffec; }
-.pulse-language select { background:#1e5740; color:white; border:0; border-radius:5px; padding:4px 6px; font:inherit; }
-.pulse-language select:focus-visible { outline:2px solid #e6ce78; }
-@media(max-width:500px){ .pulse-language label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); } }
-.pulse-app-shell > div:has(> h1) { position:relative; isolation:isolate; overflow:hidden; background:radial-gradient(circle at 50% 25%,#215c40 0,#0e352d 35%,#061b18 75%); }
-.pulse-app-shell > div:has(> h1)::before { content:""; position:absolute; z-index:-1; width:min(80vw,640px); aspect-ratio:1; top:50%; left:50%; transform:translate(-50%,-48%); border:1px solid #bdd99147; border-radius:50%; box-shadow:0 0 0 36px #7aaf7240,0 0 0 72px #7aaf7229,0 0 0 108px #7aaf7215; }
-.pulse-app-shell > div:has(> h1) > h1 { color:#f8f7e9; font-style:italic; font-weight:1000; letter-spacing:-.06em; text-transform:uppercase; text-shadow:0 7px 25px #02120e8c; }
-.pulse-app-shell > div:has(> h1) > button { color:#153025!important; background:linear-gradient(135deg,#f2da88,#cfaa48)!important; border:1px solid #ffeba4; box-shadow:0 15px 35px #020f0980!important; font-weight:900; }
-.pulse-app-shell > div:has(> h1) > p { color:#d0e4d3; }
+:root { --arcade-bg: #061612; color-scheme: dark; }
+html, body { width: 100%; height: 100%; height: 100dvh; margin: 0; overflow: hidden; overscroll-behavior: contain; background: var(--arcade-bg); color: #f5f8e9; }
+* { box-sizing: border-box; }
+.pulse-app-shell { width: 100%; height: 100%; position: relative; isolation: isolate; background: #071915; }
+.pulse-language { position: absolute; z-index: 50; top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); display: flex; align-items: center; gap: 9px; padding: 5px 6px 5px 11px; border: 1px solid #a4c99d5e; border-radius: 2px; background: #071e1bee; box-shadow: 0 9px 26px #0008; color: #e4f2de; font-family: 'Avenir Next', 'Helvetica Neue', sans-serif; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .09em; }
+.pulse-language select { min-height: 30px; padding: 4px 22px 4px 7px; border: 0; border-radius: 1px; background: #254333; color: #f1f9e8; font: inherit; cursor: pointer; }
+.pulse-language select:focus-visible { outline: 2px solid #d9fb74; outline-offset: 3px; }
+.pulse-app-shell > div:has(> h1 + p + button) { position: relative; isolation: isolate; overflow: hidden; background: linear-gradient(90deg, #06140fed 0%, #071712bf 35%, #07171269 74%), linear-gradient(0deg, #06140ffa, transparent 45%), var(--pulse-stadium) center 55% / cover no-repeat; }
+.pulse-app-shell > div:has(> h1 + p + button)::before { content: 'SOCCERVERSE  /  PENALTY PULSE'; position: absolute; top: clamp(20px, 4vw, 46px); left: clamp(20px, 5vw, 80px); z-index: -1; color: #dcf99d; font-family: 'Avenir Next', 'Helvetica Neue', sans-serif; font-size: clamp(9px, 1vw, 12px); font-weight: 950; letter-spacing: .22em; text-shadow: 0 2px 12px #000; }
+.pulse-app-shell > div:has(> h1 + p + button)::after { content: '01  /  06'; position: absolute; right: clamp(26px, 5vw, 80px); bottom: clamp(21px, 4vw, 47px); z-index: -1; border-top: 1px solid #c3ee92; padding-top: 9px; color: #dff1d5; font-family: Impact, sans-serif; font-size: 20px; letter-spacing: .1em; }
+.pulse-app-shell > div:has(> h1 + p + button) > h1 { max-width: 900px; color: #f7faee; font-family: Impact, 'Arial Narrow', 'Helvetica Neue', sans-serif; font-size: clamp(65px, 10vw, 154px); font-style: italic; font-weight: 900; letter-spacing: -.025em; line-height: .85; text-transform: uppercase; text-shadow: 0 12px 40px #000b; }
+.pulse-app-shell > div:has(> h1 + p + button) > p { max-width: 660px; color: #e1ecda; font-family: 'Avenir Next', 'Helvetica Neue', sans-serif; font-size: clamp(14px, 1.7vw, 19px); line-height: 1.4; text-shadow: 0 2px 12px #000; }
+.pulse-app-shell > div:has(> h1 + p + button) > p:first-of-type { display: none; }
+.pulse-app-shell > div:has(> h1 + p + button) > button { min-width: min(84vw, 320px); min-height: 74px; border: 1px solid #edffa7!important; border-radius: 2px!important; background: #d9fb74!important; color: #102718!important; box-shadow: 0 19px 34px #000b!important; font-family: 'Avenir Next', 'Helvetica Neue', sans-serif; font-size: 22px!important; font-weight: 950!important; text-transform: uppercase; letter-spacing: .12em; transition: transform .18s, background .18s; }
+.pulse-app-shell > div:has(> h1 + p + button) > button * { color: #204028!important; }
+.pulse-app-shell > div:has(> h1 + p + button) > button:hover { transform: translateY(-3px); background: #edffa8!important; }
+@media (max-width: 760px) {
+  .pulse-language { top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); }
+  .pulse-language label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .pulse-app-shell > div:has(> h1 + p + button) { background: linear-gradient(0deg, #06140fe9, #06140fa8 68%, #06140f66), var(--pulse-stadium) 50% 55% / cover no-repeat; }
+  .pulse-app-shell > div:has(> h1 + p + button)::before { top: 23px; left: 18px; max-width: 190px; line-height: 1.6; }
+  .pulse-app-shell > div:has(> h1 + p + button)::after { right: 19px; bottom: 23px; }
+  .pulse-app-shell > div:has(> h1 + p + button) > h1 { max-width: 96vw; font-size: clamp(60px, 15vw, 105px); line-height: .82; }
+  .pulse-app-shell > div:has(> h1 + p + button) > button { min-height: 68px; font-size: 18px!important; }
+}
+@media (prefers-reduced-motion: reduce) { .pulse-app-shell > div:has(> h1 + p + button) > button { transition-duration: 0.01ms; } }
+/* The SDK wallet step shares the stadium without taking the oversized home hero. */
+.pulse-app-shell > div:has(> h1 + div) { background: linear-gradient(90deg, #06140fed, #0717129c 65%), linear-gradient(0deg, #06140fe9, transparent 65%), var(--pulse-stadium) center 55% / cover no-repeat; }
+.pulse-app-shell > div:has(> h1 + div) > h1 { max-width: 760px; color: #f7faee; font-family: Impact, 'Arial Narrow', sans-serif; font-size: clamp(45px, 6vw, 84px); font-style: italic; font-weight: 900; line-height: .95; text-align: center; text-transform: uppercase; text-shadow: 0 12px 36px #000c; }
+.pulse-app-shell > div:has(> h1 + div) > div { width: min(92vw, 400px); padding: clamp(20px, 3vw, 34px); border: 1px solid #b6db9880; background: #071e19e9; box-shadow: 0 22px 50px #000b; }
+.pulse-app-shell > div:has(> h1 + div) > div p { color: #e2f1df; text-align: center; }
+@media (max-width: 760px) { .pulse-app-shell > div:has(> h1 + div) > h1 { font-size: clamp(43px, 12vw, 66px); } }
