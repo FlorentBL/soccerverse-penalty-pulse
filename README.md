@@ -1,13 +1,13 @@
 # Penalty Pulse
 
-A free, fast two-player Soccerverse penalty duel for XAYA Arcade. For each pair of penalties, each player secretly chooses a **shooter and a goalkeeper** from the same fixed six-player roster. The three shooters have official primary position `FC`; the three goalkeepers have `GK`. Each role offers exactly one 90+, one 75–89 and one 55–74 player. Regulation requires each of the three choices once per role, so even a three-zone underdog gets a turn.
+A free, fast two-player Soccerverse penalty duel for XAYA Arcade. Each penalty has one shooter and one goalkeeper: the active attacker picks an `FC`, the defender picks a `GK`, the defender privately positions the keeper, and the attacker shoots. Then they swap roles. Each role offers exactly one 90+, one 75–89 and one 55–74 player from a fixed six-player roster. Regulation requires each rating band once per role, so even a three-zone underdog gets a turn.
 
 ## Rules
 
-1. Seat 0 commits a hidden shooter and goalkeeper choice, seat 1 chooses their pair, then seat 0 reveals. Neither can counter-pick after seeing the other's selection. The only valid choices are the three displayed `FC` shooters and three displayed `GK` goalkeepers. Arbitrary Soccerverse IDs are rejected by the WASM rules. In the three regulation pairs, each seat must use one 90+, one 75–89 and one 55–74 player as shooter, and likewise as goalkeeper. Players and tiers can be reused in sudden death.
-2. Seat 0 shoots first in each pair, then seat 1. Before every shot, the defender sees exactly which of the nine numbered zones are reliable for the selected shooter. The defender secretly places their goalkeeper; the shooter sees the scoring zones but not the keeper's position before aiming.
+1. Seat 0 attacks first and picks one of three fixed `FC` shooters. Seat 1 then picks one of three fixed `GK` goalkeepers. The choices are visible to both players. Arbitrary Soccerverse IDs are rejected by the WASM rules. Each seat must use the 90+, 75–89 and 55–74 bands once as attacker and once as defender during regulation. Players and bands can be reused in sudden death.
+2. The defender sees exactly which of the nine numbered zones the chosen shooter can score in, then secretly places the goalkeeper. The attacker sees the scoring zones, but not the goalkeeper's position, before aiming. The goalkeeper position is committed with SHA-256 and revealed after the shot. The next penalty swaps the attacker and defender.
 3. The pinned official Soccerverse `rating_shooting` determines reliable zones: 55–59 → 3, 60–64 → 4, 65–69 → 5, 70–79 → 6, 80–89 → 7, 90–100 → 8. Ratings below 55 cannot be selected. The zone pattern rotates by player ID. An official `rating_gk` of 55–74 covers one zone. At 75–89 it covers two zones sharing a side; at 90+ it covers two zones touching by a side or corner. Two distant zones can never be covered together. The second zone is available only when the shooter has at least four reliable zones. Against a three-zone shooter every keeper covers one zone.
-4. A shot into a covered position is saved. An uncovered shot scores only in a reliable zone; other shots go wide. The defender's choice is committed with SHA-256 and revealed after the shot.
+4. A shot into a covered position is saved. An uncovered shot scores only in a reliable zone; other shots go wide. The score, goal animation and explicit result stay visible until the player presses **Continue**.
 5. Both players receive up to three regulation penalties. The match can end early if the trailing player cannot catch up. A tie enters paired sudden death and ends when the scores differ after both have shot. A timed-out active player forfeits. At the 254-kick wire limit, a remaining tie is awarded to the first shooter.
 
 The six roster IDs, names, `rating_shooting`, `rating_gk` and `position_main` are pinned from official Soccerverse sources. The full source snapshot contains 179,100 players, but gameplay admits only the six in `src/lib/pulse/featured.json`. The tier limits, zone patterns and keeper coverage are **Arcade game rules**. Player ownership is not required. There are no live Soccerverse API calls during a match.
@@ -28,7 +28,7 @@ Run `npm ci && npm run dev`, then open `http://localhost:3001/?preview=1` or sel
 
 The **Rules** button beneath the kick counter explains the full flow and rating tables in the selected language. It is available during both the local preview and online play.
 
-The first player's pair of picks and each goalkeeper choice use local 32-byte salts stored per channel, seat and kick. Keep the same browser through reveal; losing a secret before reveal can lead to a timeout. The hotseat demo skips cryptographic handoff and is for UI rehearsal only. The original static HTML in `prototype/` is an archived early prototype and does not implement the current rules.
+Each goalkeeper position uses a local 32-byte salt stored per channel, seat and kick. Keep the same browser through reveal; losing a secret before reveal can lead to a timeout. The hotseat demo skips cryptographic handoff and is for UI rehearsal only. The original static HTML in `prototype/` is an archived early prototype and does not implement the current rules.
 
 ## Build and submission
 

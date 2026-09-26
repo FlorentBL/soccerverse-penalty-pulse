@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useChannelStore } from '@xayaarcade/sdk';
 import { LanguageProvider } from '@/components/LanguageProvider';
@@ -16,101 +16,89 @@ function board(phase: number, turn: number) {
     pairShooters: [0, 0], pairKeepers: [0, 0], lastReach: 255,
   };
 }
-function setup() {
-  vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({
-    '184': 'Harry Kane', '19465': 'David Raya Martin', '159': 'Hugo Lloris', '21': 'Low scorer',
-  }) })));
-}
-afterEach(() => { submit.mockClear(); act(() => useChannelStore.setState({ boardState: null })); vi.useRealTimers(); vi.unstubAllGlobals(); });
-describe('Penalty Pulse touch flow', () => {
-  it('explains the rating bands and hidden goalkeeper choice from the score', () => {
+afterEach(() => { submit.mockClear(); act(() => useChannelStore.setState({ boardState: null })); vi.useRealTimers(); });
+describe('Penalty Pulse one-penalty touch flow', () => {
+  it('explains the simple role sequence in the rules guide', () => {
     useChannelStore.getState().updateFromBoardState(board(0, 0));
     render(<LanguageProvider><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
     fireEvent.click(screen.getByRole('button', { name: /rules/i }));
     const dialog = screen.getByRole('dialog', { name: 'HOW TO PLAY' });
-    expect(dialog).toHaveTextContent('Both players see the exact same green zones');
-    expect(dialog).toHaveTextContent('2 zones sharing an edge');
+    expect(dialog).toHaveTextContent('On your turn to shoot, choose one of your three FC shooters');
+    expect(dialog).toHaveTextContent('On the next penalty, you swap roles');
     expect(dialog).toHaveTextContent('2 touching zones, edge or corner');
-    expect(dialog).toHaveTextContent('Against a shooter with only three green zones');
     fireEvent.click(screen.getByRole('button', { name: 'Close rules' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
-  it('offers three rating bands in each role and locks a distinct duo', async () => {
-    setup();
-    useChannelStore.getState().updateFromBoardState(board(1, 1));
-    render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
-    expect(screen.getByText(/choose one shooter and one keeper/i)).toBeInTheDocument();
-    expect(screen.getByText('TWO PLAYERS · TWO ROLES')).toBeInTheDocument();
-    const roles = screen.getAllByRole('listitem');
-    expect(roles[0]).toHaveTextContent('01GUARD THEIR PENALTY');
-    expect(roles[1]).toHaveTextContent('02TAKE YOUR PENALTY');
-    expect(screen.getAllByText('90+')).toHaveLength(2);
-    expect(screen.getAllByText('75–89')).toHaveLength(2);
-    expect(screen.getAllByText('55–74')).toHaveLength(2);
-    expect(screen.getByRole('button', { name: /Mario Barwuah Balotelli/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Hugo Lloris/i })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Harry Kane/i }));
-    fireEvent.click(screen.getByRole('button', { name: /David Raya Martin/i }));
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Lock lineup/i })));
-    expect(submit).toHaveBeenCalledWith({ type: 'pick', kick: 0, shooterId: 184, keeperId: 19465 });
-  });
-  it('offers only the six fixed choices and no arbitrary ID entry', () => {
+  it('shows only the three shooters when it is your turn to shoot', async () => {
     useChannelStore.getState().updateFromBoardState(board(0, 0));
-    render(<LanguageProvider><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
+    render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
+    expect(screen.getByText(/your penalty. choose your shooter/i)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'STRIKER' }).querySelectorAll('.pulse-roster-cards button')).toHaveLength(3);
-    expect(screen.getByRole('region', { name: 'KEEPER' }).querySelectorAll('.pulse-roster-cards button')).toHaveLength(3);
+    expect(screen.queryByRole('region', { name: 'KEEPER' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Penalty goal' })).toBeInTheDocument();
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Harry Kane/i }));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Choose shooter/i })));
+    expect(submit).toHaveBeenCalledWith({ type: 'shooter', kick: 0, playerId: 184 });
   });
-  it('shows the goalkeeper every scoring zone of a limited shooter before the dive', () => {
-    setup();
-    useChannelStore.getState().updateFromBoardState({ ...board(3, 1), pairShooters: [1917, 874], pairKeepers: [62, 19465] });
+  it('then shows only the three goalkeepers to the defending player', async () => {
+    useChannelStore.getState().updateFromBoardState({ ...board(1, 1), pairShooters: [184, 0], usedShooters: [[184, 0, 0], [0, 0, 0]] });
+    render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
+    expect(screen.getByText(/your opponent shoots. choose your goalkeeper/i)).toBeInTheDocument();
+    expect(screen.getByText(/their shooter/i)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'KEEPER' }).querySelectorAll('.pulse-roster-cards button')).toHaveLength(3);
+    expect(screen.queryByRole('region', { name: 'STRIKER' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /David Raya Martin/i }));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Choose goalkeeper/i })));
+    expect(submit).toHaveBeenCalledWith({ type: 'keeper', kick: 0, playerId: 19465 });
+  });
+  it('shows the defender the three reliable zones of a limited shooter', () => {
+    useChannelStore.getState().updateFromBoardState({ ...board(2, 1), pairShooters: [1917, 0], pairKeepers: [0, 19465] });
     render(<LanguageProvider><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
     expect(screen.getByText(/shooter can score only in the 3 green zones/i)).toBeInTheDocument();
     expect(screen.getByText('01 · 02 · 06')).toBeInTheDocument();
-    for (const zone of [0, 1, 5])
-      expect(document.querySelector(`[data-zone="${zone}"]`)).toHaveClass('scoring');
-    expect(document.querySelector('[data-zone="3"]')).not.toHaveClass('scoring');
+    for (const zone of [0, 1, 5]) expect(document.querySelector(`[data-zone="${zone}"]`)).toHaveClass('scoring');
   });
-  it('allows an elite goalkeeper a touching second zone but disables distant zones', async () => {
-    setup();
-    useChannelStore.getState().updateFromBoardState({ ...board(3, 1), pairShooters: [184, 874], pairKeepers: [62, 19465] });
+  it('allows only a touching second goalkeeper zone', async () => {
+    useChannelStore.getState().updateFromBoardState({ ...board(2, 1), pairShooters: [184, 0], pairKeepers: [0, 19465] });
     render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
-    expect(screen.getByText(/elite keeper: choose a second zone touching the first/i)).toBeInTheDocument();
-    expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '4');
     fireEvent.click(screen.getByRole('button', { name: 'HIGH LEFT' }));
-    expect(screen.getByRole('button', { name: /Commit dive/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'LOW RIGHT' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'LOW RIGHT' })).toHaveClass('unreachable');
     fireEvent.click(screen.getByRole('button', { name: 'MID CENTRE' }));
-    expect(screen.getByRole('button', { name: 'MID CENTRE' })).toHaveClass('pulse-reach');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Commit dive/i })));
     expect(submit).toHaveBeenCalledWith({ type: 'guard', kick: 0, lane: 0, reach: 4 });
   });
-  it('lets the shooter aim without seeing the hidden goalkeeper position', async () => {
-    setup();
-    useChannelStore.getState().updateFromBoardState({ ...board(4, 0), pairShooters: [184, 874], pairKeepers: [62, 19465] });
+  it('lets the shooter aim without seeing the hidden goalkeeper', async () => {
+    useChannelStore.getState().updateFromBoardState({ ...board(3, 0), pairShooters: [184, 0], pairKeepers: [0, 19465] });
     render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
-    await waitFor(() => expect(screen.getByText(/Harry Kane/i)).toBeInTheDocument());
+    expect(screen.getByText(/Harry Kane/i)).toBeInTheDocument();
     expect(screen.queryByTestId('pulse-keeper')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'HIGH RIGHT' }));
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Take shot/i })));
     expect(submit).toHaveBeenCalledWith({ type: 'shot', kick: 0, lane: 2 });
   });
-  it('animates only after the defender reveals the shot', () => {
-    useChannelStore.getState().updateFromBoardState({ ...board(5, 1), pairShooters: [184, 874], pairKeepers: [62, 19465], pendingLane: 4 });
+  it('keeps the goal and result visible until Continue after the shot', () => {
+    useChannelStore.getState().updateFromBoardState({ ...board(4, 1), pairShooters: [184, 0], pairKeepers: [0, 19465], pendingLane: 4 });
     render(<LanguageProvider><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
     expect(screen.queryByTestId('pulse-shot-replay')).not.toBeInTheDocument();
+    vi.useFakeTimers();
     act(() => useChannelStore.getState().updateFromBoardState({
-      ...board(3, 0), kick: 1, turnCount: 6, pairShooters: [184, 874], pairKeepers: [62, 19465],
-      lastShot: 4, lastGuard: 0, lastReach: 4, lastResult: 2, lastPlayer: 184, lastKeeper: 19465,
-      usedShooters: [[184, 0, 0], [874, 0, 0]], usedKeepers: [[62, 0, 0], [19465, 0, 0]],
+      ...board(0, 1), kick: 1, turnCount: 5, goals: [1, 0],
+      lastShot: 4, lastGuard: 0, lastReach: 1, lastResult: 1, lastPlayer: 184, lastKeeper: 19465,
+      usedShooters: [[184, 0, 0], [0, 0, 0]], usedKeepers: [[0, 0, 0], [19465, 0, 0]],
     }));
-    expect(screen.getByTestId('pulse-shot-replay')).toHaveClass('pulse-replay-saved');
-    expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '4');
+    expect(screen.getByTestId('pulse-shot-replay')).toHaveClass('pulse-replay-goal');
+    act(() => vi.advanceTimersByTime(1900));
+    expect(screen.getByRole('status')).toHaveTextContent('GOAL');
+    expect(screen.getByRole('region', { name: 'Penalty goal' })).toBeInTheDocument();
+    expect(screen.getByText('1', { selector: '.pulse-score-side strong' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
-  it('keeps the completed sudden-death pair on its actual round', () => {
+  it('shows the completed sudden-death round', () => {
     useChannelStore.getState().updateFromBoardState({
-      ...board(6, 255), kick: 8, turnCount: 36, goals: [1, 0], winner: 0,
+      ...board(6, 255), kick: 8, turnCount: 40, goals: [1, 0], winner: 0,
       lastResult: 2, lastGuard: 4, lastShot: 4, lastPlayer: 874, lastKeeper: 62,
     });
     render(<LanguageProvider><PulseBoard localPlayerIndex={0} /></LanguageProvider>);

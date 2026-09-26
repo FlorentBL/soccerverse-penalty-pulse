@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { decodeState, encodeCommit, encodePick, encodePickCommit, encodePickReveal, encodeReveal, encodeShot, scoringTargets } from '@/lib/pulse/codec';
+import { decodeState, encodeCommit, encodeKeeper, encodeReveal, encodeShooter, encodeShot, scoringTargets } from '@/lib/pulse/codec';
 
 interface Judge {
   memory: WebAssembly.Memory;
@@ -46,6 +46,13 @@ function parse(api: Judge, state: Uint8Array, seats = 2): number {
   api.arcade_free(p, state.length);
   return h;
 }
+function apply(api: Judge, current: Uint8Array, move: Uint8Array): Uint8Array | null {
+  const h = parse(api, current);
+  expect(h).toBeGreaterThan(0);
+  const next = call(api, 'apply', h, move);
+  api.arcade_release(h);
+  return next;
+}
 describe('Penalty Pulse WASM judge', () => {
   it('replays native early finish and sudden-death traces byte for byte', async () => {
     const lines = readFileSync(resolve(__dirname, '../fixtures/native-trace.txt'), 'utf8').trim().split('\n');
@@ -54,7 +61,7 @@ describe('Penalty Pulse WASM judge', () => {
       expect(lines.shift()).toBe('mode ' + mode);
       let state: Uint8Array = call(api, 'initial', 2)!;
       expect(hex(state)).toBe(lines.shift());
-      for (let i = 0; i < (mode === 0 ? 18 : 36); ++i) {
+      for (let i = 0; i < (mode === 0 ? 20 : 40); ++i) {
         const [moveHex, stateHex] = lines.shift()!.split(' ');
         const h = parse(api, state);
         expect(h).toBeGreaterThan(0);
@@ -63,13 +70,10 @@ describe('Penalty Pulse WASM judge', () => {
         api.arcade_release(h);
         expect(hex(state)).toBe(stateHex);
       }
-      const final = decodeState(state, 2)!;
-      expect(final.phase).toBe(6);
-      expect(final.winner).toBe(0);
-      expect(final.kick).toBe(mode === 0 ? 4 : 8);
+      expect(decodeState(state, 2)).toMatchObject({ phase: 6, winner: 0, kick: mode === 0 ? 4 : 8 });
     }
   });
-  it('rejects malformed config, states, moves and invalid reveals; resolves a timeout', async () => {
+  it('rejects malformed config, states, moves and resolves a timeout', async () => {
     const api = await judge();
     expect(call(api, 'initial', 2, Uint8Array.of(1))).toBeNull();
     const state = call(api, 'initial', 2)!;
@@ -79,63 +83,37 @@ describe('Penalty Pulse WASM judge', () => {
     expect(bad).toBeGreaterThan(0); expect(api.arcade_is_valid(bad)).toBe(0); api.arcade_release(bad);
     const h = parse(api, state);
     expect(call(api, 'apply', h, Uint8Array.of(2, 1))).toBeNull();
-    expect(call(api, 'apply', h, Uint8Array.of(1))).toBeNull();
     const timeout = call(api, 'timeout', h, new Uint8Array(), 0)!;
     expect(decodeState(timeout, 2)?.winner).toBe(1);
     api.arcade_release(h);
   });
-  it('uses elite goalkeeper reach and separate shooter and keeper in WASM', async () => {
+  it('chooses one shooter then the opposing keeper and keeps the dive secret', async () => {
     const api = await judge();
     const salt = Uint8Array.from({ length: 32 }, (_, n) => n + 1);
-    async function applyAll(moves: Uint8Array[]): Promise<Uint8Array> {
-      let current = call(api, 'initial', 2)!;
-      for (const move of moves) {
-        const h = parse(api, current);
-        const next = call(api, 'apply', h, move);
-        api.arcade_release(h);
-        expect(next).not.toBeNull();
-        current = next!;
-      }
-      return current;
-    }
-    const striker = 184, keeper = 19465;
-    const target = scoringTargets(striker)[0];
-    const primary = target % 3 < 2 ? target + 1 : target - 1;
-    const pairMoves = [await encodePickCommit(0, striker, 62, salt), encodePick(874, keeper), encodePickReveal(striker, 62, salt)];
-    const caught = await applyAll([...pairMoves, await encodeCommit(0, primary, target, salt),
-      encodeShot(target), encodeReveal(primary, target, salt)]);
-    expect(decodeState(caught, 2)).toMatchObject({ lastResult: 2, lastReach: target,
-      pairShooters: [striker, 874], pairKeepers: [62, keeper] });
-    const h = parse(api, caught);
-    expect(api.arcade_is_valid(h)).toBe(1);
-    api.arcade_release(h);
-    const badState = await applyAll(pairMoves);
-    const h2 = parse(api, badState);
-    expect(call(api, 'apply', h2, encodeShot(target))).toBeNull();
-    // The opaque commitment cannot be checked until the defender reveals it.
-    const distantCommit = call(api, 'apply', h2, await encodeCommit(0, 6, 8, salt))!;
-    api.arcade_release(h2);
-    const shooting = parse(api, distantCommit);
-    const pendingReveal = call(api, 'apply', shooting, encodeShot(target))!;
-    api.arcade_release(shooting);
-    const revealing = parse(api, pendingReveal);
-    expect(call(api, 'apply', revealing, encodeReveal(6, 8, salt))).toBeNull();
-    api.arcade_release(revealing);
-  });
-  it('rejects GK and wing players as shooters and FC players as keepers', async () => {
-    const api = await judge();
-    const salt = Uint8Array.from({ length: 32 }, (_, n) => n + 3);
     const initial = call(api, 'initial', 2)!;
-    const first = parse(api, initial);
-    const committed = call(api, 'apply', first, await encodePickCommit(0, 184, 19465, salt))!;
-    api.arcade_release(first);
-    const second = parse(api, committed);
-    expect(call(api, 'apply', second, encodePick(159, 1438))).toBeNull();
-    expect(call(api, 'apply', second, encodePick(1460, 1438))).toBeNull();
-    expect(call(api, 'apply', second, encodePick(874, 184))).toBeNull();
-    expect(call(api, 'apply', second, encodePick(1100, 1438))).toBeNull();
-    expect(call(api, 'apply', second, encodePick(874, 22221))).toBeNull();
-    expect(call(api, 'apply', second, encodePick(874, 1438))).not.toBeNull();
-    api.arcade_release(second);
+    const afterShooter = apply(api, initial, encodeShooter(184))!;
+    expect(decodeState(afterShooter, 2)).toMatchObject({ phase: 1, turn: 1, pairShooters: [184, 0] });
+    const afterKeeper = apply(api, afterShooter, encodeKeeper(19465))!;
+    expect(decodeState(afterKeeper, 2)).toMatchObject({ phase: 2, turn: 1, pairKeepers: [0, 19465] });
+    const target = scoringTargets(184)[0];
+    const primary = target % 3 < 2 ? target + 1 : target - 1;
+    const afterCommit = apply(api, afterKeeper, await encodeCommit(0, primary, target, salt))!;
+    expect(decodeState(afterCommit, 2)).toMatchObject({ phase: 3, turn: 0, lastResult: 0 });
+    const afterShot = apply(api, afterCommit, encodeShot(target))!;
+    expect(decodeState(afterShot, 2)).toMatchObject({ phase: 4, turn: 1, lastResult: 0 });
+    const caught = apply(api, afterShot, encodeReveal(primary, target, salt))!;
+    expect(decodeState(caught, 2)).toMatchObject({ phase: 0, kick: 1, turn: 1, lastResult: 2,
+      lastReach: target, lastPlayer: 184, lastKeeper: 19465, pairShooters: [0, 0], pairKeepers: [0, 0] });
+    const badCommit = apply(api, afterKeeper, await encodeCommit(0, 6, 8, salt))!;
+    const badShot = apply(api, badCommit, encodeShot(target))!;
+    expect(apply(api, badShot, encodeReveal(6, 8, salt))).toBeNull();
+  });
+  it('rejects wrong positions and players outside the fixed rosters', async () => {
+    const api = await judge();
+    const initial = call(api, 'initial', 2)!;
+    for (const id of [159, 1460, 1100]) expect(apply(api, initial, encodeShooter(id))).toBeNull();
+    const afterShooter = apply(api, initial, encodeShooter(184))!;
+    for (const id of [184, 159, 22221]) expect(apply(api, afterShooter, encodeKeeper(id))).toBeNull();
+    expect(apply(api, afterShooter, encodeKeeper(1438))).not.toBeNull();
   });
 });

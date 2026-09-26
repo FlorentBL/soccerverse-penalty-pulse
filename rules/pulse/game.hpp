@@ -7,13 +7,13 @@
 namespace pulse {
 
 constexpr std::size_t STATE_SIZE = 127;
-enum Phase : std::uint8_t { PICK_COMMIT = 0, PICK = 1, PICK_REVEAL = 2,
-  COMMIT = 3, SHOOT = 4, REVEAL = 5, FINISHED = 6 };
+enum Phase : std::uint8_t { CHOOSE_SHOOTER = 0, CHOOSE_KEEPER = 1,
+  COMMIT = 2, SHOOT = 3, REVEAL = 4, FINISHED = 6 };
 enum Result : std::uint8_t { NONE = 0, GOAL = 1, SAVED = 2, MISSED = 3 };
 
 struct State {
   std::uint8_t participants = 2;
-  Phase phase = PICK_COMMIT;
+  Phase phase = CHOOSE_SHOOTER;
   std::uint8_t turn = 0;
   std::uint8_t kick = 0;
   std::uint8_t goals[2] = {0, 0};

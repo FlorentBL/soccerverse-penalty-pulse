@@ -28,7 +28,7 @@ export interface PulseState {
 }
 
 export function decodeState(bytes: Uint8Array, participants: number): PulseState | null {
-  if (bytes.length !== 127 || bytes[0] !== 3 || bytes[1] !== participants || bytes[2] > 6) return null;
+  if (bytes.length !== 127 || bytes[0] !== 4 || bytes[1] !== participants || bytes[2] > 6 || bytes[2] === 5) return null;
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const usedShooters: [number[], number[]] = [
     [v.getUint32(48, true), v.getUint32(52, true), v.getUint32(56, true)],
@@ -87,32 +87,19 @@ export function validReach(keeperId: number, shooterId: number, first: number, s
   if (second < 0 || second > 8 || second === first) return false;
   return (goalkeeperRating(keeperId) ?? 0) >= 90 ? adjacent(first, second) : edgeAdjacent(first, second);
 }
-export function encodePick(shooter: number, keeper: number): Uint8Array {
-  const b = new Uint8Array(9);
-  b[0] = 4;
-  new DataView(b.buffer).setUint32(1, shooter, true);
-  new DataView(b.buffer).setUint32(5, keeper, true);
+export function encodeShooter(shooter: number): Uint8Array {
+  const b = new Uint8Array(5);
+  b[0] = 4; new DataView(b.buffer).setUint32(1, shooter, true);
+  return b;
+}
+export function encodeKeeper(keeper: number): Uint8Array {
+  const b = new Uint8Array(5);
+  b[0] = 5; new DataView(b.buffer).setUint32(1, keeper, true);
   return b;
 }
 export function encodeShot(lane: number): Uint8Array { return Uint8Array.of(2, lane); }
 async function sha(bytes: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array(bytes)));
-}
-export async function encodePickCommit(round: number, shooter: number, keeper: number, salt: Uint8Array): Promise<Uint8Array> {
-  const preimage = new Uint8Array(42);
-  preimage[0] = 0x50; preimage[1] = round;
-  new DataView(preimage.buffer).setUint32(2, shooter, true);
-  new DataView(preimage.buffer).setUint32(6, keeper, true);
-  preimage.set(salt, 10);
-  const move = new Uint8Array(33);
-  move[0] = 5; move.set(await sha(preimage), 1);
-  return move;
-}
-export function encodePickReveal(shooter: number, keeper: number, salt: Uint8Array): Uint8Array {
-  const b = new Uint8Array(41);
-  b[0] = 6; new DataView(b.buffer).setUint32(1, shooter, true);
-  new DataView(b.buffer).setUint32(5, keeper, true); b.set(salt, 9);
-  return b;
 }
 export async function encodeCommit(kick: number, guard: number, reach: number, salt: Uint8Array): Promise<Uint8Array> {
   const preimage = new Uint8Array(36);

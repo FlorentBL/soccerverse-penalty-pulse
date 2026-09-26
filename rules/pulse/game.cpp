@@ -47,11 +47,9 @@ int scoreWinner(std::uint8_t kick, const std::uint8_t goals[2]) {
   if (goals[0] != goals[1]) return goals[0] > goals[1] ? 0 : 1;
   return kick == 254 ? 0 : -1;
 }
-std::uint16_t roundBase(std::uint8_t kick) {
-  return std::uint16_t(9 * (kick / 2) + (kick % 2 ? 6 : 0));
-}
-std::uint8_t phaseOffset(Phase phase, std::uint8_t kick) {
-  return kick % 2 ? std::uint8_t(phase - COMMIT) : std::uint8_t(phase);
+std::uint16_t roundBase(std::uint8_t kick) { return std::uint16_t(5 * kick); }
+int expectedTurn(Phase phase, std::uint8_t kick) {
+  return (phase == CHOOSE_SHOOTER || phase == SHOOT) ? kick % 2 : 1 - kick % 2;
 }
 bool tierUsed(const State& s, int seat, std::uint32_t id, bool keeper) {
   if (s.kick >= 6) return false;
@@ -61,16 +59,11 @@ bool tierUsed(const State& s, int seat, std::uint32_t id, bool keeper) {
     if (previous && ratingTier(keeper ? goalkeeperRating(previous) : shootingRating(previous)) == tier) return true;
   return false;
 }
-bool validDuo(std::uint32_t shooter, std::uint32_t keeper) {
-  return shooter != keeper && inRoster(shooter, rosterShooters) && inRoster(keeper, rosterKeepers) &&
-    isCentreForward(shooter) && isGoalkeeper(keeper) &&
-    ratingTier(shootingRating(shooter)) >= 0 && ratingTier(goalkeeperRating(keeper)) >= 0;
+bool validShooter(std::uint32_t id) {
+  return inRoster(id, rosterShooters) && isCentreForward(id) && ratingTier(shootingRating(id)) >= 0;
 }
-std::uint8_t expectedTurn(Phase phase, std::uint8_t kick) {
-  if (phase == PICK_COMMIT || phase == PICK_REVEAL) return 0;
-  if (phase == PICK) return 1;
-  if (phase == SHOOT) return kick % 2;
-  return 1 - kick % 2;
+bool validKeeper(std::uint32_t id) {
+  return inRoster(id, rosterKeepers) && isGoalkeeper(id) && ratingTier(goalkeeperRating(id)) >= 0;
 }
 } // namespace
 
@@ -145,7 +138,7 @@ bool initial(std::uint8_t participants, const std::uint8_t*, std::size_t cfgLeng
 
 std::array<std::uint8_t, STATE_SIZE> encode(const State& s) {
   std::array<std::uint8_t, STATE_SIZE> b{};
-  b[0] = 3; b[1] = s.participants; b[2] = s.phase; b[3] = s.turn;
+  b[0] = 4; b[1] = s.participants; b[2] = s.phase; b[3] = s.turn;
   b[4] = s.kick; b[5] = s.goals[0]; b[6] = s.goals[1];
   b[7] = static_cast<std::uint8_t>(s.winner);
   b[8] = std::uint8_t(s.turnCount); b[9] = std::uint8_t(s.turnCount >> 8);
@@ -171,7 +164,7 @@ std::array<std::uint8_t, STATE_SIZE> encode(const State& s) {
 }
 
 bool decode(const std::uint8_t* b, std::size_t n, std::uint8_t participants, State& s) {
-  if (!b || n != STATE_SIZE || b[0] != 3 || b[1] != participants) return false;
+  if (!b || n != STATE_SIZE || b[0] != 4 || b[1] != participants) return false;
   s.participants = b[1]; s.phase = static_cast<Phase>(b[2]); s.turn = b[3];
   s.kick = b[4]; s.goals[0] = b[5]; s.goals[1] = b[6];
   s.winner = static_cast<std::int8_t>(b[7]);
@@ -195,67 +188,63 @@ bool decode(const std::uint8_t* b, std::size_t n, std::uint8_t participants, Sta
 }
 
 bool valid(const State& s) {
-  if (s.participants < 1 || s.participants > 2 || s.phase > FINISHED ||
-      s.kick > 254 || s.turnCount > 1143 ||
-      s.goals[0] > (s.kick + 1) / 2 || s.goals[1] > s.kick / 2 ||
-      s.lastResult > MISSED) return false;
-  if (s.participants == 1) {
-    return s.phase == PICK_COMMIT && s.turn == 255 && !s.kick && !s.turnCount &&
-      s.winner == -1 && allZero(s.commitment) && !s.pendingShooter && !s.pendingKeeper &&
+  if (s.participants < 1 || s.participants > 2 ||
+      (s.phase > REVEAL && s.phase != FINISHED) || s.kick > 254 ||
+      s.turnCount > 1270 || s.goals[0] > (s.kick + 1) / 2 ||
+      s.goals[1] > s.kick / 2 || s.lastResult > MISSED ||
+      s.pendingShooter || s.pendingKeeper) return false;
+  if (s.participants == 1)
+    return s.phase == CHOOSE_SHOOTER && s.turn == 255 && !s.kick && !s.turnCount &&
+      s.winner == -1 && allZero(s.commitment) && s.pendingLane == 255 &&
       !s.pairShooters[0] && !s.pairShooters[1] && !s.pairKeepers[0] && !s.pairKeepers[1];
-  }
   const auto base = roundBase(s.kick);
-  Phase active = s.phase;
   const int outcome = scoreWinner(s.kick, s.goals);
+  Phase active = s.phase;
   if (s.phase == FINISHED) {
     if (s.turn != 255 || s.winner < 0 || s.winner > 1) return false;
     if (outcome != -1 && s.winner == outcome && s.turnCount == base) {
       active = FINISHED;
     } else {
-      if (outcome != -1 || s.turnCount <= base) return false;
-      const int offset = s.turnCount - base - 1;
-      if (offset < 0 || offset > (s.kick % 2 ? 2 : 5)) return false;
-      active = static_cast<Phase>(offset + (s.kick % 2 ? COMMIT : PICK_COMMIT));
+      if (outcome != -1 || s.turnCount <= base || s.turnCount > base + 5) return false;
+      active = static_cast<Phase>(s.turnCount - base - 1);
+      if (s.winner != 1 - expectedTurn(active, s.kick)) return false;
     }
-  } else {
-    if (outcome != -1 || s.winner != -1 ||
-        (s.kick % 2 && s.phase < COMMIT) ||
-        s.turn != expectedTurn(s.phase, s.kick) ||
-        s.turnCount != base + phaseOffset(s.phase, s.kick)) return false;
-  }
-  const bool selected = s.kick % 2 || (active >= COMMIT && active <= REVEAL);
+  } else if (outcome != -1 || s.winner != -1 || s.kick == 254 ||
+             s.turn != expectedTurn(s.phase, s.kick) ||
+             s.turnCount != base + s.phase) return false;
+  const int shooterSeat = s.kick % 2, defenderSeat = 1 - shooterSeat;
+  const bool shooterChosen = active >= CHOOSE_KEEPER && active <= REVEAL;
+  const bool keeperChosen = active >= COMMIT && active <= REVEAL;
+  if (shooterChosen != bool(s.pairShooters[shooterSeat]) ||
+      keeperChosen != bool(s.pairKeepers[defenderSeat]) ||
+      s.pairShooters[defenderSeat] || s.pairKeepers[shooterSeat] ||
+      (shooterChosen && !validShooter(s.pairShooters[shooterSeat])) ||
+      (keeperChosen && !validKeeper(s.pairKeepers[defenderSeat]))) return false;
   for (int seat = 0; seat < 2; ++seat) {
-    for (int shot = 0; shot < 3; ++shot) {
-      const auto shooter = s.usedShooters[seat][shot];
-      const auto keeper = s.usedKeepers[seat][shot];
-      const bool assigned = shot < s.kick / 2 || (selected && shot == s.kick / 2);
-      if ((assigned && !validDuo(shooter, keeper)) || (!assigned && (shooter || keeper))) return false;
-      for (int earlier = 0; earlier < shot; ++earlier)
-        if (shooter && (ratingTier(shootingRating(shooter)) == ratingTier(shootingRating(s.usedShooters[seat][earlier])) ||
-                        ratingTier(goalkeeperRating(keeper)) == ratingTier(goalkeeperRating(s.usedKeepers[seat][earlier])))) return false;
+    const int completedShoot = (s.kick + 1 - seat) / 2;
+    const int completedKeep = (s.kick + seat) / 2;
+    const int assignedShoot = s.kick < 6 ? completedShoot + (shooterChosen && seat == shooterSeat) : 3;
+    const int assignedKeep = s.kick < 6 ? completedKeep + (keeperChosen && seat == defenderSeat) : 3;
+    for (int i = 0; i < 3; ++i) {
+      const auto shooter = s.usedShooters[seat][i], keeper = s.usedKeepers[seat][i];
+      if ((i < assignedShoot) != bool(shooter) || (i < assignedKeep) != bool(keeper) ||
+          (shooter && !validShooter(shooter)) || (keeper && !validKeeper(keeper))) return false;
+      for (int j = 0; j < i; ++j) {
+        if (shooter && ratingTier(shootingRating(shooter)) == ratingTier(shootingRating(s.usedShooters[seat][j]))) return false;
+        if (keeper && ratingTier(goalkeeperRating(keeper)) == ratingTier(goalkeeperRating(s.usedKeepers[seat][j]))) return false;
+      }
     }
+    if (s.kick < 6 && shooterChosen && seat == shooterSeat &&
+        s.usedShooters[seat][completedShoot] != s.pairShooters[seat]) return false;
+    if (s.kick < 6 && keeperChosen && seat == defenderSeat &&
+        s.usedKeepers[seat][completedKeep] != s.pairKeepers[seat]) return false;
   }
-  if (selected) {
-    for (int seat = 0; seat < 2; ++seat)
-      if (!validDuo(s.pairShooters[seat], s.pairKeepers[seat]) ||
-          (s.kick < 6 && (s.pairShooters[seat] != s.usedShooters[seat][s.kick / 2] ||
-                          s.pairKeepers[seat] != s.usedKeepers[seat][s.kick / 2]))) return false;
-  } else if (s.pairShooters[0] || s.pairShooters[1] || s.pairKeepers[0] || s.pairKeepers[1]) return false;
-  if (active == PICK_COMMIT || active == COMMIT || active == FINISHED) {
-    if (!allZero(s.commitment) || s.pendingShooter || s.pendingKeeper || s.pendingLane != 255) return false;
-  } else if (active == PICK || active == PICK_REVEAL) {
-    if (allZero(s.commitment) || s.pendingLane != 255 ||
-        (active == PICK ? s.pendingShooter != 0 || s.pendingKeeper != 0 :
-         !validDuo(s.pendingShooter, s.pendingKeeper) ||
-         tierUsed(s, 1, s.pendingShooter, false) || tierUsed(s, 1, s.pendingKeeper, true))) return false;
-  } else {
-    if ((active == SHOOT || active == REVEAL ? allZero(s.commitment) : !allZero(s.commitment)) ||
-        s.pendingShooter || s.pendingKeeper || (active == REVEAL ? s.pendingLane > 8 : s.pendingLane != 255)) return false;
-  }
+  if ((active == SHOOT || active == REVEAL) == allZero(s.commitment) ||
+      (active == REVEAL ? s.pendingLane > 8 : s.pendingLane != 255)) return false;
   if (s.kick == 0) {
     if (s.lastResult != NONE || s.lastPlayer || s.lastKeeper || s.lastShot != 255 ||
         s.lastGuard != 255 || s.lastReach != 255) return false;
-  } else if (s.lastResult == NONE || !validDuo(s.lastPlayer, s.lastKeeper) ||
+  } else if (s.lastResult == NONE || !validShooter(s.lastPlayer) || !validKeeper(s.lastKeeper) ||
              s.lastShot > 8 || !validReach(s.lastKeeper, s.lastPlayer, s.lastGuard, s.lastReach)) return false;
   if (s.kick > 0) {
     const auto result = s.lastShot == s.lastGuard || s.lastShot == s.lastReach ? SAVED :
@@ -270,51 +259,34 @@ int whoseTurn(const State& s) { return s.participants == 2 && s.phase != FINISHE
 bool apply(State& s, const std::uint8_t* m, std::size_t n) {
   if (!m || !valid(s) || s.participants != 2 || s.phase == FINISHED) return false;
   State next = s;
-  if (s.phase == PICK_COMMIT) {
-    if (n != 33 || m[0] != 5) return false;
-    std::memcpy(next.commitment.data(), m + 1, 32);
-    if (allZero(next.commitment)) return false;
-    next.phase = PICK; next.turn = 1;
-  } else if (s.phase == PICK) {
-    if (n != 9 || m[0] != 4) return false;
-    const auto shooter = read32(m + 1), keeper = read32(m + 5);
-    if (!validDuo(shooter, keeper) || tierUsed(s, 1, shooter, false) || tierUsed(s, 1, keeper, true)) return false;
-    next.pendingShooter = shooter; next.pendingKeeper = keeper;
-    next.phase = PICK_REVEAL; next.turn = 0;
-  } else if (s.phase == PICK_REVEAL) {
-    if (n != 41 || m[0] != 6) return false;
-    const auto shooter = read32(m + 1), keeper = read32(m + 5);
-    if (!validDuo(shooter, keeper) || tierUsed(s, 0, shooter, false) || tierUsed(s, 0, keeper, true)) return false;
-    std::uint8_t payload[42] = {0x50, std::uint8_t(s.kick / 2)};
-    write32(payload + 2, shooter); write32(payload + 6, keeper);
-    std::memcpy(payload + 10, m + 9, 32);
-    std::uint8_t digest[32];
-    pulse_sha256(payload, sizeof(payload), digest);
-    if (std::memcmp(digest, s.commitment.data(), 32) != 0) return false;
-    next.pairShooters[0] = shooter; next.pairShooters[1] = s.pendingShooter;
-    next.pairKeepers[0] = keeper; next.pairKeepers[1] = s.pendingKeeper;
-    if (s.kick < 6) {
-      next.usedShooters[0][s.kick / 2] = shooter;
-      next.usedShooters[1][s.kick / 2] = s.pendingShooter;
-      next.usedKeepers[0][s.kick / 2] = keeper;
-      next.usedKeepers[1][s.kick / 2] = s.pendingKeeper;
-    }
-    next.pendingShooter = 0; next.pendingKeeper = 0; next.commitment.fill(0);
-    next.phase = COMMIT; next.turn = 1;
+  const int shooterSeat = s.kick % 2, defenderSeat = 1 - shooterSeat;
+  if (s.phase == CHOOSE_SHOOTER) {
+    if (n != 5 || m[0] != 4) return false;
+    const auto shooter = read32(m + 1);
+    if (!validShooter(shooter) || tierUsed(s, shooterSeat, shooter, false)) return false;
+    next.pairShooters[shooterSeat] = shooter;
+    if (s.kick < 6) next.usedShooters[shooterSeat][s.kick / 2] = shooter;
+    next.phase = CHOOSE_KEEPER; next.turn = defenderSeat;
+  } else if (s.phase == CHOOSE_KEEPER) {
+    if (n != 5 || m[0] != 5) return false;
+    const auto keeper = read32(m + 1);
+    if (!validKeeper(keeper) || tierUsed(s, defenderSeat, keeper, true)) return false;
+    next.pairKeepers[defenderSeat] = keeper;
+    if (s.kick < 6) next.usedKeepers[defenderSeat][s.kick / 2] = keeper;
+    next.phase = COMMIT;
   } else if (s.phase == COMMIT) {
     if (n != 33 || m[0] != 1) return false;
     std::memcpy(next.commitment.data(), m + 1, 32);
     if (allZero(next.commitment)) return false;
-    next.phase = SHOOT; next.turn = s.kick % 2;
+    next.phase = SHOOT; next.turn = shooterSeat;
   } else if (s.phase == SHOOT) {
     if (n != 2 || m[0] != 2 || m[1] > 8) return false;
     next.pendingLane = m[1];
-    next.phase = REVEAL; next.turn = 1 - s.kick % 2;
+    next.phase = REVEAL; next.turn = defenderSeat;
   } else {
     if (n != 35 || m[0] != 3 || m[1] > 8) return false;
-    const int shooter = s.kick % 2;
-    const auto keeper = s.pairKeepers[1 - shooter];
-    const auto striker = s.pairShooters[shooter];
+    const auto keeper = s.pairKeepers[defenderSeat];
+    const auto striker = s.pairShooters[shooterSeat];
     if (!validReach(keeper, striker, m[1], m[2])) return false;
     std::uint8_t payload[36] = {0x47, s.kick, m[1], m[2]};
     std::memcpy(payload + 4, m + 3, 32);
@@ -325,19 +297,15 @@ bool apply(State& s, const std::uint8_t* m, std::size_t n) {
     next.lastGuard = m[1]; next.lastReach = m[2];
     next.lastResult = m[1] == s.pendingLane || m[2] == s.pendingLane ? SAVED :
       (isScoringTarget(striker, s.pendingLane) ? GOAL : MISSED);
-    if (next.lastResult == GOAL) ++next.goals[shooter];
+    if (next.lastResult == GOAL) ++next.goals[shooterSeat];
     next.commitment.fill(0); next.pendingLane = 255;
+    next.pairShooters[shooterSeat] = 0; next.pairKeepers[defenderSeat] = 0;
     ++next.kick;
     const int winner = scoreWinner(next.kick, next.goals);
     if (winner != -1) {
       next.phase = FINISHED; next.turn = 255; next.winner = winner;
-      if (next.kick % 2 == 0) { next.pairShooters[0] = 0; next.pairShooters[1] = 0; next.pairKeepers[0] = 0; next.pairKeepers[1] = 0; }
-    } else if (next.kick % 2) {
-      next.phase = COMMIT; next.turn = 0;
     } else {
-      next.phase = PICK_COMMIT; next.turn = 0;
-      next.pairShooters[0] = 0; next.pairShooters[1] = 0;
-      next.pairKeepers[0] = 0; next.pairKeepers[1] = 0;
+      next.phase = CHOOSE_SHOOTER; next.turn = next.kick % 2;
     }
   }
   ++next.turnCount;
