@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { decodeState, encodeCommit, encodePick, encodeReveal, encodeShot, scoringTargets } from '@/lib/pulse/codec';
+import { decodeState, encodeCommit, encodePick, encodePickCommit, encodePickReveal, encodeReveal, encodeShot, scoringTargets } from '@/lib/pulse/codec';
 
 interface Judge {
   memory: WebAssembly.Memory;
@@ -30,13 +30,13 @@ async function judge(): Promise<Judge> {
 }
 function call(api: Judge, kind: 'initial' | 'apply' | 'timeout', arg: number, input: Uint8Array = new Uint8Array(), seat = 0): Uint8Array | null {
   const p = api.arcade_alloc(input.length);
-  const out = api.arcade_alloc(78);
+  const out = api.arcade_alloc(87);
   new Uint8Array(api.memory.buffer).set(input, p);
-  const n = kind === 'initial' ? api.arcade_initial_state(arg, p, input.length, out, 78) :
-    kind === 'apply' ? api.arcade_apply_move(arg, p, input.length, out, 78) :
-      api.arcade_resolve_timeout(arg, seat, out, 78);
+  const n = kind === 'initial' ? api.arcade_initial_state(arg, p, input.length, out, 87) :
+    kind === 'apply' ? api.arcade_apply_move(arg, p, input.length, out, 87) :
+      api.arcade_resolve_timeout(arg, seat, out, 87);
   const value = n < 0 ? null : new Uint8Array(new Uint8Array(api.memory.buffer).slice(out, out + n));
-  api.arcade_free(p, input.length); api.arcade_free(out, 78);
+  api.arcade_free(p, input.length); api.arcade_free(out, 87);
   return value;
 }
 function parse(api: Judge, state: Uint8Array, seats = 2): number {
@@ -54,7 +54,7 @@ describe('Penalty Pulse WASM judge', () => {
       expect(lines.shift()).toBe('mode ' + mode);
       let state: Uint8Array = call(api, 'initial', 2)!;
       expect(hex(state)).toBe(lines.shift());
-      for (let i = 0; i < (mode === 0 ? 16 : 32); ++i) {
+      for (let i = 0; i < (mode === 0 ? 18 : 36); ++i) {
         const [moveHex, stateHex] = lines.shift()!.split(' ');
         const h = parse(api, state);
         expect(h).toBeGreaterThan(0);
@@ -64,7 +64,7 @@ describe('Penalty Pulse WASM judge', () => {
         expect(hex(state)).toBe(stateHex);
       }
       const final = decodeState(state, 2)!;
-      expect(final.phase).toBe(4);
+      expect(final.phase).toBe(6);
       expect(final.winner).toBe(0);
       expect(final.kick).toBe(mode === 0 ? 4 : 8);
     }
@@ -73,7 +73,7 @@ describe('Penalty Pulse WASM judge', () => {
     const api = await judge();
     expect(call(api, 'initial', 2, Uint8Array.of(1))).toBeNull();
     const state = call(api, 'initial', 2)!;
-    expect(parse(api, state.slice(0, 77))).toBe(0);
+    expect(parse(api, state.slice(0, 86))).toBe(0);
     const forged = state.slice(); forged[4] = 99;
     const bad = parse(api, forged);
     expect(bad).toBeGreaterThan(0); expect(api.arcade_is_valid(bad)).toBe(0); api.arcade_release(bad);
@@ -84,22 +84,36 @@ describe('Penalty Pulse WASM judge', () => {
     expect(decodeState(timeout, 2)?.winner).toBe(1);
     api.arcade_release(h);
   });
-  it('applies the pinned shooting tiers to goals and wide shots', async () => {
+  it('uses goalkeeper reach and the four-zone specialist cap in WASM', async () => {
     const api = await judge();
-    for (const [id, lane, result] of [
-      [1100, scoringTargets(1100)[7], 1],
-      [1, [0, 1, 2, 3, 4, 5, 6, 7, 8].find(n => !scoringTargets(1).includes(n))!, 3],
-    ]) {
-      let state = call(api, 'initial', 2)!;
-      const guard = (lane + 1) % 9;
-      const salt = Uint8Array.from({ length: 32 }, (_, n) => n + 1);
-      for (const move of [encodePick(id), await encodeCommit(0, guard, salt), encodeShot(lane), encodeReveal(guard, salt)]) {
-        const handle = parse(api, state);
-        state = call(api, 'apply', handle, move)!;
-        api.arcade_release(handle);
-        expect(state).not.toBeNull();
+    const salt = Uint8Array.from({ length: 32 }, (_, n) => n + 1);
+    async function applyAll(moves: Uint8Array[]): Promise<Uint8Array> {
+      let current = call(api, 'initial', 2)!;
+      for (const move of moves) {
+        const h = parse(api, current);
+        const next = call(api, 'apply', h, move);
+        api.arcade_release(h);
+        expect(next).not.toBeNull();
+        current = next!;
       }
-      expect(decodeState(state, 2)?.lastResult).toBe(result);
+      return current;
     }
+    const striker = 1100, keeper = 19465;
+    const target = scoringTargets(striker)[0];
+    const primary = Array.from({ length: 9 }, (_, i) => i).find(i => i !== target &&
+      Math.abs(i % 3 - target % 3) <= 1 &&
+      Math.abs(Math.floor(i / 3) - Math.floor(target / 3)) <= 1)!;
+    const pairMoves = [await encodePickCommit(0, striker, salt), encodePick(keeper), encodePickReveal(striker, salt)];
+    const caught = await applyAll([...pairMoves, await encodeCommit(0, primary, target, salt),
+      encodeShot(target), encodeReveal(primary, target, salt)]);
+    expect(decodeState(caught, 2)).toMatchObject({ lastResult: 2, lastReach: target, pairPlayers: [striker, keeper] });
+    const h = parse(api, caught);
+    expect(api.arcade_is_valid(h)).toBe(1);
+    api.arcade_release(h);
+    expect(scoringTargets(keeper)).toHaveLength(4);
+    const badState = await applyAll(pairMoves);
+    const h2 = parse(api, badState);
+    expect(call(api, 'apply', h2, encodeShot(target))).toBeNull();
+    api.arcade_release(h2);
   });
 });

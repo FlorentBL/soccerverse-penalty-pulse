@@ -4,18 +4,18 @@ import { useRef, useState } from 'react';
 import { useLanguage } from './LanguageProvider';
 import PulseBoard from './PulseBoard';
 import type { PulseInput } from '@/lib/pulse/channel';
-import { advancePreview, initialPreviewState } from '@/lib/pulse/dev-preview';
+import { advancePreview, initialPreviewState, type PreviewGuard } from '@/lib/pulse/dev-preview';
 
 export default function DevPreview({ onExit }: { onExit: () => void }) {
   const { t } = useLanguage();
   const [game, setGame] = useState(initialPreviewState);
   const [resetKey, setResetKey] = useState(0);
-  const keeperLane = useRef<number | null>(null);
+  const keeperLane = useRef<PreviewGuard | null>(null);
 
   async function submit(input: PulseInput): Promise<boolean> {
     const next = advancePreview(game, input, keeperLane.current);
     if (!next) return false;
-    keeperLane.current = next.keeperLane;
+    keeperLane.current = next.keeperChoice;
     setGame(next.state);
     return true;
   }
@@ -33,6 +33,6 @@ export default function DevPreview({ onExit }: { onExit: () => void }) {
         <button type="button" onClick={onExit}>{t.exitDemo}</button></div>
     </div>
     <PulseBoard key={resetKey} previewState={game} onPreviewInput={submit}
-      localPlayerIndex={game.phase === 4 ? (game.kick - 1) % 2 : game.turn} />
+      localPlayerIndex={game.phase === 6 ? (game.kick - 1) % 2 : game.turn} />
   </div>;
 }

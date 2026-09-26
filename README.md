@@ -1,29 +1,28 @@
 # Penalty Pulse
 
-A free two-player Soccerverse penalty shootout for XAYA Arcade. Each side has three regulation kicks, with early decisions and sudden death. Soccerverse player IDs, names and shooting ratings are pinned into the game.
+A free, fast two-player Soccerverse penalty duel for XAYA Arcade. Each player selects **one Soccerverse footballer per round**. That footballer takes their penalty and guards the opponent's penalty. The best shooter is therefore not automatically the best choice.
 
-## Play
+## Rules
 
-1. The striker chooses a Soccerverse player. Each side uses a different player for each of its three regulation kicks. The player's real `rating_shooting` gives them 2–8 reliable targets in a nine-zone goal.
-2. The defender **chooses exactly where their goalkeeper dives** among those nine zones. The choice is committed with SHA-256 and stays hidden until after the shot.
-3. The striker chooses one of the nine targets. Matching the keeper's spot is a save. Another spot scores only if it is a reliable target for that player; otherwise the ball goes wide.
-4. The defender reveals the dive. Players alternate shooting. The match ends early when the trailing side cannot catch up. If tied after three kicks each, sudden death proceeds in pairs until one side leads after equal attempts. Players can be reused in sudden death. A timed-out active player forfeits.
+1. Seat 0 commits a hidden player choice, seat 1 selects a player, then seat 0 reveals their committed choice. Neither can counter-pick after seeing the other's selection. Each seat must use three different players in regulation; players can be reused in sudden death.
+2. The first penalty of the pair is taken by seat 0, the second by seat 1. For each penalty, the defending player chooses a secret primary keeper position in the nine-zone goal. An official Soccerverse `rating_gk` of **75 or higher** also lets them choose one **adjacent** second position if the striker has at least four reliable zones. The striker never sees these positions before aiming.
+3. The official Soccerverse `rating_shooting` determines 2–8 reliable zones: below 55 → 2, 55–59 → 3, 60–64 → 4, 65–69 → 5, 70–79 → 6, 80–89 → 7, 90–100 → 8. A strong goalkeeper uses an Arcade **keeper-focus** rule: their own shot is capped at four reliable zones, regardless of their shooting rating. The four-zone pattern is rotated by player ID and has a balanced adjacency shape.
+4. A shot into either position covered by the keeper is saved. An uncovered shot scores only in one of the striker's reliable zones; other shots go wide. The defender's choice is committed with SHA-256 and revealed after the shot.
+5. Both players receive up to three regulation penalties. The match can end early if the trailing player cannot catch up. A tie enters paired sudden death and ends when the scores differ after both have shot. A timed-out active player forfeits. At the 254-kick wire limit, a remaining tie is awarded to the first shooter.
 
-The illustrated goalkeeper moves to the defender's selected zone. It disappears from the striker's view while the dive is secret. Once the kick resolves, the ball flies toward the chosen target, the keeper dives, and the result appears before the next turn. Reduced-motion settings show the result without the replay.
+The player IDs, names, `rating_shooting` and `rating_gk` are pinned from official Soccerverse sources for 179,100 players. Thresholds, keeper focus and target patterns are **Arcade game rules**. Player ownership is not required. There are no live Soccerverse API calls during a match.
 
-The official `rating_shooting` is pinned for all 179,100 catalogue players. Arcade converts the rating into reliable zones: below 55 → 2, 55–59 → 3, 60–64 → 4, 65–69 → 5, 70–79 → 6, 80–89 → 7, 90–100 → 8. The **thresholds** and **specific zone pattern**, derived deterministically from the player ID, are Arcade rules. A stronger shooter has more ways to beat the keeper's chosen spot; every shooter still has at least one unreliable zone. Ownership is **not verified or required**. No live Soccerverse API is called during a match. The one-byte kick counter permits 254 total kicks; if 124 extra pairs all remain tied, the first shooter wins as a technical tiebreak. This extreme limit keeps the two-player result valid for Arcade settlement.
+## Balance measurement
 
-## Try locally
+Run `python3 scripts/measure-balance.py` with SciPy. On the pinned data there are 708 players with goalkeeper rating at least 75 and 55 players with shooting at least 90 and goalkeeper rating below 75. The quick picks show three of each. With optimal randomized lane choices, every displayed striker-versus-keeper matchup gives **75% scoring probability to each side**. Two displayed strikers score 87.5% each; two displayed keepers score 50% each. These are mathematical one-penalty values for the deterministic rules, not measured human win rates. The script prints all nine displayed cross-role comparisons.
 
-Open [prototype/index.html](prototype/index.html) through a local static server for a hotseat prototype, or run `npm ci && npm run dev` for the full React app. The full app uses the official XAYA Arcade SDK for its lobby, wallet, channel and signed moves. On the Arcade, the cross-game lobby supplies the matchmaking agreement to that SDK. The match itself requires the Arcade services. Its default language is English, with French, Italian, Spanish and Portuguese in the language selector. The interface declares touch support and adapts to mobile viewports.
+## Play locally
 
-During development, open `http://localhost:3001/?preview=1` or choose **Preview without wallet** on the home screen. This opens the actual React board in a local hotseat demo: choose a striker, choose the opposing goalkeeper's dive, then shoot, repeating until the result. **Restart** resets the demo. The preview is available only with `npm run dev` and resolves turns locally; it does not create an Arcade match or validate the SDK and WASM multiplayer flow.
+Run `npm ci && npm run dev`, then open `http://localhost:3001/?preview=1` or select **Preview without wallet**. The full React board runs a local hotseat game without a wallet. It has the same selection, zone, save and scoring logic as the WASM judge; the online match remains judged by `blob/rules.wasm` through the official XAYA Arcade SDK. The interface defaults to English, with French, Italian, Spanish and Portuguese available. For a phone on the same Wi-Fi, open `http://<machine-LAN-IP>:3001/?preview=1` while the dev server is running.
 
-To try the preview on a phone, connect it to the same Wi-Fi as the development machine and open `http://<machine-LAN-IP>:3001/?preview=1`. The dev server automatically allows its current local IPv4 addresses for Next.js scripts; `NEXT_DEV_ORIGINS` can add another development hostname. Keep the dev server and machine awake while testing.
+The first player's pick and each goalkeeper choice use local 32-byte salts stored per channel, seat and kick. Keep the same browser through reveal; losing a secret before reveal can lead to a timeout. The hotseat demo skips cryptographic handoff and is for UI rehearsal only. The original static HTML in `prototype/` is an archived early prototype and does not implement the current dual-role rules.
 
-The commit/reveal ordering keeps the goalkeeper's chosen direction secret until the striker has shot. The keeper's 32-byte salt is generated locally and stored per channel/seat/kick so reconnects can reveal the same commitment. A lost browser storage record may prevent a reveal and lead to a timeout; use the same browser until the kick resolves.
-
-## Build and tests
+## Build and submission
 
 ```sh
 npm ci
@@ -32,23 +31,18 @@ npm test
 npm run typecheck
 npm run typecheck:test
 npm run verify:css
+bash blob/build-blob.sh
 bash blob/check-blob.sh --strict
 npm run build
 FRAME_ANCESTORS=https://test-arcade.xaya.io NEXT_PUBLIC_GAME_ID=xarc bash scripts/build-export.sh --bundle
 ```
 
-`xarc` is the playground move namespace documented in the official skill. A different target Arcade may require its own namespace. The static export writes `dist/bundle.tar.gz` and its SHA-256 sidecar. Arcade games-host supplies runtime endpoints and framing settings; a standalone static host needs correctly configured endpoints and embedding headers. Rebuild the pinned WASM with Docker using `bash blob/build-blob.sh`. Data provenance and regeneration are recorded in [data/SOURCE.md](data/SOURCE.md).
+The SDK supplies the lobby, matchmaking agreement, channel and signed moves. `xarc` is the playground move namespace documented in the official skill; another target Arcade may use a different namespace. The static export writes `dist/bundle.tar.gz` and a SHA-256 sidecar. Data provenance is in [data/SOURCE.md](data/SOURCE.md), ABI values in [blob/MANIFEST.md](blob/MANIFEST.md), and the candidate submission in [SUBMISSION.md](SUBMISSION.md).
 
-## Registration and submission
+Free play is the only requested mode. WCHI stakes are a separate future operator discussion; no configurable creator fee on the GSP is assumed. **No submission has been made.** A remote repository and a successful two-player XAYA playground match remain required.
 
-The proposed values and ABI notes are in [blob/MANIFEST.md](blob/MANIFEST.md). The complete candidate submission details, local evidence and remaining gates are in [SUBMISSION.md](SUBMISSION.md). Free play is the only requested mode. WCHI wagering is a separate future operator configuration and no creator-fee setting is assumed.
+## Sources
 
-**No submission has been made.** A remote Git repository and a two-player test on the XAYA playground are still required before submission.
-
-## Source references
-
-- [Official Arcade skills](https://arcade.xaya.io/skills), especially the channel game, WASM, Arcade and wagering sections.
-- [Arcade ABI documentation](https://arcade.xaya.io/docs/rules-blob) and [SDK documentation](https://arcade.xaya.io/docs/sdk).
-- Official examples already present at `~/Downloads/xaya-arcade-examples`.
-- [Soccerverse datapack](https://soccerverse.com/developers/datapack-and-assets) and [Soccerverse MCP player data](https://soccerverse.com/developers/soccerverse-mcp), with snapshot details in [data/SOURCE.md](data/SOURCE.md).
-- [IFAB penalty shootout procedure](https://www.theifab.com/laws/latest/determining-the-outcome-of-a-match/) for early decision and equal-attempt sudden death; the three-kick format is this game's shorter Arcade variant.
+- [Official XAYA Arcade skills](https://arcade.xaya.io/skills), [rules blob ABI](https://arcade.xaya.io/docs/rules-blob) and [SDK docs](https://arcade.xaya.io/docs/sdk); local official examples at `~/Downloads/xaya-arcade-examples`.
+- [Soccerverse datapack](https://soccerverse.com/developers/datapack-and-assets) and [Soccerverse MCP player data](https://soccerverse.com/developers/soccerverse-mcp).
+- [IFAB penalty shootout procedure](https://www.theifab.com/laws/latest/determining-the-outcome-of-a-match/) for early decisions and equal-attempt sudden death; this game's three-kick format is shorter.

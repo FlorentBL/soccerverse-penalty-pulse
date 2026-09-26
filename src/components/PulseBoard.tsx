@@ -5,7 +5,7 @@ import { useChannelStore } from '@xayaarcade/sdk';
 import { useLanguage } from './LanguageProvider';
 import { submitPulseInput } from '@/hooks/use-pulse-input';
 import type { PulseState } from '@/lib/pulse/codec';
-import { scoringTargetCount, scoringTargets, shootingRating } from '@/lib/pulse/codec';
+import { adjacent, canReach, goalkeeperRating, scoringTargetCount, scoringTargets, shootingRating } from '@/lib/pulse/codec';
 import { featuredPlayers, findPlayerName } from '@/lib/pulse/players';
 import { keeperChoice, type PulseInput } from '@/lib/pulse/channel';
 import KeeperFigure from './KeeperFigure';
@@ -33,6 +33,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const preview = previewState !== undefined;
   const [guard, setGuard] = useState<number | null>(null);
   const [lockedGuard, setLockedGuard] = useState<number | null>(null);
+  const [reach, setReach] = useState<number | null>(null);
   const [aim, setAim] = useState<number | null>(null);
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [playerName, setPlayerName] = useState('');
@@ -42,28 +43,33 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const arenaRef = useRef<HTMLElement>(null);
   const seenKick = useRef<number | null>(null);
   const [replay, setReplay] = useState<ShotReplay | null>(null);
-  const myTurn = game?.turn === localPlayerIndex && game.phase !== 4;
-  const picking = myTurn && game?.phase === 0;
-  const defending = myTurn && game?.phase === 1;
-  const shooting = myTurn && game?.phase === 2;
+  const myTurn = game?.turn === localPlayerIndex && game.phase !== 6;
+  const picking = myTurn && (game?.phase === 0 || game?.phase === 1);
+  const defending = myTurn && game?.phase === 3;
+  const shooting = myTurn && game?.phase === 4;
+  const shooterSeat = game ? game.kick % 2 : 0;
+  const strikerId = game?.pairPlayers[shooterSeat] || 0;
+  const keeperId = game?.pairPlayers[1 - shooterSeat] || 0;
+  const reachNeeded = strikerId > 0 && keeperId > 0 && canReach(keeperId, strikerId);
   const used = game && game.kick < 6 ? game.used[localPlayerIndex] : [];
 
   useEffect(() => {
-    setGuard(null); setLockedGuard(null); setAim(null); setPlayerId(null); setPlayerName('');
+    setGuard(null); setReach(null); setLockedGuard(null); setAim(null); setPlayerId(null); setPlayerName('');
     setBusy(false); setError('');
   }, [game?.turnCount]);
   useEffect(() => {
-    if (!preview && game?.phase === 1 && game.turn === localPlayerIndex) {
+    if (!preview && game?.phase === 3 && game.turn === localPlayerIndex) {
       const saved = keeperChoice(channelId, localPlayerIndex, game.kick);
-      setLockedGuard(saved); setGuard(saved);
+      setLockedGuard(saved?.lane ?? null); setGuard(saved?.lane ?? null); setReach(saved?.reach === 255 ? null : saved?.reach ?? null);
     }
   }, [channelId, game?.phase, game?.kick, game?.turn, localPlayerIndex, preview]);
   useEffect(() => {
-    if ((game?.phase !== 1 && game?.phase !== 2) || !game.pendingPlayer) return;
+    const id = picking ? playerId : game?.pairPlayers[localPlayerIndex];
+    if (!id) return;
     let live = true;
-    void findPlayerName(game.pendingPlayer).then(name => { if (live) setPlayerName(name ?? '#' + game.pendingPlayer); });
+    void findPlayerName(id).then(name => { if (live) setPlayerName(name ?? '#' + id); });
     return () => { live = false; };
-  }, [game?.phase, game?.pendingPlayer]);
+  }, [game?.phase, game?.pairPlayers, localPlayerIndex, picking, playerId]);
   useEffect(() => {
     if (!busy) return;
     const timer = window.setTimeout(() => { setBusy(false); setError(t.slow); }, 15000);
@@ -103,7 +109,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
     const dx = impactX - startX;
     const dy = impactY - startY;
     setReplay({
-      kick: game.kick, guard: game.lastGuard, result: game.lastResult,
+      kick: game.kick, guard: game.lastResult === 2 && game.lastReach === game.lastShot ? game.lastShot : game.lastGuard, result: game.lastResult,
       style: {
         '--shot-start-x': `${startX}px`, '--shot-start-y': `${startY}px`,
         '--shot-impact-x': `${impactX}px`, '--shot-impact-y': `${impactY}px`,
@@ -122,7 +128,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   async function selectPlayer(id: number) {
     if (replay) return;
     if (used.includes(id)) { setError(t.cannotReuse); return; }
-    if (shootingRating(id) === null) { setError(t.playerMissing); return; }
+    if (shootingRating(id) === null || goalkeeperRating(id) === null) { setError(t.playerMissing); return; }
     setError('');
     try {
       const name = await findPlayerName(id);
@@ -132,11 +138,11 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   }
   async function send() {
     if (!game || !myTurn || busy || replay) return;
-    const input = game.phase === 0 && playerId !== null
+    const input = (game.phase === 0 || game.phase === 1) && playerId !== null
       ? { type: 'pick' as const, kick: game.kick, playerId }
-      : game.phase === 1 && guard !== null
-      ? { type: 'guard' as const, kick: game.kick, lane: guard }
-      : game.phase === 2 && aim !== null
+      : game.phase === 3 && guard !== null && (!reachNeeded || reach !== null)
+      ? { type: 'guard' as const, kick: game.kick, lane: guard, reach: reachNeeded ? reach! : 255 }
+      : game.phase === 4 && aim !== null
         ? { type: 'shot' as const, kick: game.kick, lane: aim }
         : null;
     if (!input) return;
@@ -145,16 +151,17 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       if (!await (onPreviewInput ?? submitPulseInput)(input)) { setBusy(false); setError(t.disconnected); }
     } catch { setBusy(false); setError(t.disconnected); }
   }
-  const finished = game?.phase === 4;
+  const finished = game?.phase === 6;
   const result = game?.lastResult === 1 ? t.goal : game?.lastResult === 2 ? t.saved : game?.lastResult === 3 ? t.missed : '—';
   const instructions = !game ? t.waiting :
     finished ? game.winner === -2 ? t.draw : preview ? `P${game.winner + 1} ${t.wins}` : game.winner === localPlayerIndex ? t.yourWin : t.rivalWin :
-    game.phase === 3 ? t.revealPrompt : picking ? t.pickPrompt : defending ? t.guardPrompt : shooting ? t.shotPrompt : t.waiting;
-  const displayId = defending || shooting ? game?.pendingPlayer ?? null : playerId;
-  const allowed = displayId === null ? [] : scoringTargets(displayId);
+    (game.phase === 2 || game.phase === 5) ? t.revealPrompt : picking ? t.pickPrompt : defending ? t.guardPrompt : shooting ? t.shotPrompt : t.waiting;
+  const displayId = defending || shooting ? game?.pairPlayers[localPlayerIndex] || null : playerId;
+  const allowed = picking && displayId ? scoringTargets(displayId) : strikerId ? scoringTargets(strikerId) : [];
   const roleLabel = defending ? t.keeper : picking || shooting ? t.striker : t.result;
   const phaseLabel = replay ? t.result : preview && (picking || defending || shooting) ? `P${localPlayerIndex + 1} / ${roleLabel}` : roleLabel;
-  const lastKeeper = game && game.kick > 0 && (finished || game.phase === 0 && playerId === null) && game.lastGuard <= 8 ? game.lastGuard : null;
+  const lastKeeper = game && game.kick > 0 && (finished || game.phase === 0 && playerId === null) && game.lastGuard <= 8 ?
+    game.lastResult === 2 && game.lastReach === game.lastShot ? game.lastShot : game.lastGuard : null;
   const keeperSpot = replay ? replay.guard : defending ? guard ?? 4 : lastKeeper;
   const shownKick = replay ? replay.kick - 1 : game?.kick ?? 0;
   const shownGoals = game ? [...game.goals] : [0, 0];
@@ -191,17 +198,17 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
         {Array.from({ length: 9 }, (_, lane) => {
           const key = labels[lane % 3];
           const height = heights[Math.floor(lane / 3)];
-          const chosen = defending ? guard === lane : shooting ? aim === lane : false;
+          const chosen = defending ? guard === lane || reach === lane : shooting ? aim === lane : false;
           const last = !replay && (finished || game?.phase === 0);
-          const keeperHere = last && game?.lastGuard === lane;
+          const keeperHere = last && (game?.lastGuard === lane || game?.lastReach === lane);
           const ballHere = last && game?.lastShot === lane;
           const marker = keeperHere ? 'keeper' : ballHere ? game?.lastResult === 3 ? 'missed' : 'ball' : '';
-          return <button type="button" key={lane} className={'pulse-zone ' + (chosen ? 'selected ' : '') + (allowed.includes(lane) && (picking || defending || shooting) ? 'scoring ' : '') + marker}
-            disabled={(!defending && !shooting) || busy || !!replay || (defending && lockedGuard !== null && lockedGuard !== lane)}
+          return <button type="button" key={lane} className={'pulse-zone ' + (chosen ? 'selected ' : '') + (allowed.includes(lane) && (picking || defending || shooting) ? 'scoring ' : '') + (defending && reach === lane ? 'pulse-reach ' : '') + (defending && guard === lane ? 'pulse-primary ' : '') + marker}
+            disabled={(!defending && !shooting) || busy || !!replay || (defending && lockedGuard !== null)}
             data-zone={lane} aria-label={`${t[height]} ${t[key]}`} aria-pressed={chosen}
-            onClick={() => defending ? setGuard(lane) : setAim(lane)}>
+            onClick={() => defending ? (guard === null || !reachNeeded || !adjacent(guard, lane) ? (setGuard(lane), setReach(null)) : setReach(lane)) : setAim(lane)}>
             <span className="pulse-zone-no" aria-hidden="true">0{lane + 1}</span>
-            <span className="pulse-zone-target" aria-hidden="true">{ballHere && !keeperHere ? '●' : chosen ? '✦' : '+'}</span>
+            <span className="pulse-zone-target" aria-hidden="true">{ballHere && !keeperHere ? '●' : defending && reach === lane ? '◎' : chosen ? '✦' : '+'}</span>
           </button>;
         })}
         {keeperSpot !== null && <KeeperFigure lane={keeperSpot} ready={defending && guard === null} replay={!!replay}
@@ -219,21 +226,25 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       <div className="pulse-pitch-line" />
     </section>
     <section className="pulse-console">
-      <div className="pulse-step"><span className="pulse-step-index">{game?.phase === 0 ? '01' : game?.phase === 1 ? '02' : game?.phase === 2 ? '03' : game?.phase === 3 ? '04' : 'FT'}</span>
+      <div className="pulse-step"><span className="pulse-step-index">{game?.phase === 0 || game?.phase === 1 ? '01' : game?.phase === 3 ? '02' : game?.phase === 4 ? '03' : 'FT'}</span>
         <div><small>{phaseLabel}</small><p aria-live="polite">{instructions}</p></div></div>
       {picking && <div className="pulse-picker">
         <label htmlFor="pulse-player-id">{t.playerId}</label>
         <div className="pulse-search"><input id="pulse-player-id" type="number" min="1" max="523571" inputMode="numeric" value={lookup}
           onChange={e => setLookup(e.target.value)} placeholder="1100" />
           <button type="button" disabled={!!replay} onClick={() => void selectPlayer(Number(lookup))}>{t.search}</button></div>
-        <div className="pulse-featured"><small>{t.featured}</small><div>{featuredPlayers.map((p, index) =>
-          <button type="button" key={p.id} disabled={!!replay || used.includes(p.id)} className={playerId === p.id ? 'active' : ''}
-            onClick={() => void selectPlayer(p.id)}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{p.name}<b>{shootingRating(p.id)} · {scoringTargetCount(p.id)}/9</b></button>)}</div></div>
+        <div className="pulse-featured"><small>{t.featured}</small>{(['striker', 'keeper'] as const).map(role =>
+          <div className="pulse-featured-group" key={role}><span>{role === 'striker' ? t.striker : t.keeper}</span><div>{featuredPlayers.filter(p => p.role === role).map((p, index) =>
+            <button type="button" key={p.id} disabled={!!replay || used.includes(p.id)} className={playerId === p.id ? 'active' : ''}
+              onClick={() => void selectPlayer(p.id)}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{p.name}<b>{t.shootingRating} {shootingRating(p.id)} · {t.keeper} {goalkeeperRating(p.id)}</b></button>)}</div></div>)}</div>
       </div>}
       {displayId !== null && (picking || defending || shooting) && <div className="pulse-player"><div className="pulse-player-monogram" aria-hidden="true">SV</div><div className="pulse-player-info"><strong>{playerName || '#' + displayId}</strong><span>#{displayId}</span>
-        <small>{t.shootingRating}: <b>{shootingRating(displayId)}/100</b> <em>· {t.pulsePrecision}: {allowed.length}/9</em></small>
-        <div className="pulse-skill-bars" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i} className={i < allowed.length ? 'active' : ''} />)}</div></div></div>}
-      {(picking || defending || shooting) && <button type="button" className="pulse-action" disabled={busy || !!replay || picking && playerId === null || defending && guard === null || shooting && aim === null}
+        <small>{t.shootingRating}: <b>{shootingRating(displayId)}/100</b> <em>· {t.keeper}: {goalkeeperRating(displayId)}/100 · {t.pulsePrecision}: {scoringTargetCount(displayId)}/9</em></small>
+        {goalkeeperRating(displayId)! >= 75 && <small className="pulse-focus-note">{t.keeperFocus}</small>}
+        <div className="pulse-skill-bars" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i} className={i < scoringTargetCount(displayId) ? 'active' : ''} />)}</div></div></div>}
+      {(defending || shooting) && <div className="pulse-matchup"><div><span>{t.striker}</span><b>{featuredPlayers.find(p => p.id === strikerId)?.name ?? '#' + strikerId}</b><small>{t.shootingRating} {shootingRating(strikerId)} · {scoringTargetCount(strikerId)}/9</small></div><strong>VS</strong><div><span>{t.keeper}</span><b>{featuredPlayers.find(p => p.id === keeperId)?.name ?? '#' + keeperId}</b><small>{t.keeper} {goalkeeperRating(keeperId)} · {reachNeeded ? '2' : '1'}/9</small></div></div>}
+      {defending && reachNeeded && <p className="pulse-reach-hint">{t.reachPrompt} {guard !== null && <button type="button" onClick={() => { setGuard(null); setReach(null); }}>{t.resetPosition}</button>}</p>}
+      {(picking || defending || shooting) && <button type="button" className="pulse-action" disabled={busy || !!replay || picking && playerId === null || defending && (guard === null || reachNeeded && reach === null) || shooting && aim === null}
         onClick={() => void send()}>{picking ? t.confirmPlayer : defending ? t.dive : t.shoot}<span aria-hidden="true">↗</span></button>}
       {!!game?.kick && !replay && <div className="pulse-last" aria-live="polite"><span>{t.result}</span><strong>{result}</strong></div>}
       {error && <p role="alert" className="pulse-error">{error}</p>}

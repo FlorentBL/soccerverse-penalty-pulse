@@ -175,3 +175,21 @@
 }
 @media (max-width: 390px) { .pulse-root { padding: 10px; }.pulse-free { padding: 6px; font-size: 8px; }.pulse-kicker { font-size: 8px; }.pulse-arena { min-height: 274px; padding: 66px 12px 0; }.pulse-goal { height: 148px; }.pulse-console { padding: 14px; }.pulse-goal-legend { right: 12px; font-size: 8px; letter-spacing: .03em; } }
 @media (prefers-reduced-motion: reduce) { .pulse-root *, .pulse-root *::before, .pulse-root *::after { transition-duration: 0.01ms!important; animation-duration: 0.01ms!important; } }
+
+.pulse-zone.pulse-reach { box-shadow: inset 0 0 0 3px #d9ff75, 0 0 28px #c9ff6070; }
+.pulse-zone.pulse-primary { box-shadow: inset 0 0 0 4px #f5fff0, 0 0 36px #b9ff8a94; }
+.pulse-reach-hint { display: flex; justify-content: space-between; gap: 1rem; align-items: center; color: #ddffa1; font-size: .86rem; line-height: 1.4; }
+.pulse-reach-hint button { border: 1px solid #aacf7d; background: transparent; color: #e8ffc9; padding: .55rem .75rem; border-radius: .3rem; cursor: pointer; white-space: nowrap; }
+.pulse-featured .pulse-featured-group { display: block; margin-top: 12px; padding: 0; overflow: visible; }
+.pulse-featured-group > span { display: block; color: #d9f7ac; font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
+.pulse-featured-group > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 7px; padding: 6px 0; }
+.pulse-featured-group button { display: grid; grid-template-columns: 24px minmax(0, 1fr); grid-template-rows: auto auto; width: 100%; min-height: 48px; column-gap: 8px; row-gap: 2px; }
+.pulse-featured-group button > span { grid-row: 1 / 3; }
+.pulse-featured-group button > b { grid-column: 2; margin: 0; padding: 0; border: 0; }
+.pulse-player .pulse-focus-note { color: #e6ffa4; font-size: 10px; }
+.pulse-matchup { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 10px; padding: 10px; border: 1px solid #afdc8d61; background: #061f1bba; }
+.pulse-matchup > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pulse-matchup > div > span { color: #b6d49c; font-size: 9px; letter-spacing: .15em; font-weight: 900; text-transform: uppercase; }
+.pulse-matchup > div > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f3ffdd; font-size: 12px; }
+.pulse-matchup > div > small { color: #d9fb74; font-size: 9px; font-weight: 850; }
+.pulse-matchup > strong { color: #d9fb74; font: italic 900 15px Impact, sans-serif; }

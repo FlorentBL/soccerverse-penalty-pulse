@@ -8,11 +8,11 @@
 | Config suffix | none (`null` in submission JSON; no bytes) |
 | Full cfg delivered to `arcade_initial_state` | 0 bytes |
 | Rules blob | `blob/rules.wasm` |
-| Rules SHA-256 | `63073035b19e4bc18297c32bda4cff7d37241afc0a48da1f5bde97d0f8d21973` |
-| State encoding | version 1, fixed 78 bytes; see `rules/pulse/game.cpp` and `src/lib/pulse/codec.ts` |
-| Turns | 4 signed moves per kick; at most 6 regulation kicks, early finish and paired sudden death, up to 254 total kicks |
+| Rules SHA-256 | `b0bfcd4a08cb2a0d83e6cc65ba8214b0c00b538631595ede73860591ba224c9f` |
+| State encoding | version 2, fixed 87 bytes; see `rules/pulse/game.cpp` and `src/lib/pulse/codec.ts` |
+| Turns | 3 signed moves to commit/select/reveal a player pair, then 3 moves per penalty; at most 6 regulation kicks, early finish and paired sudden death, up to 254 total kicks |
 | Timeout | active seat forfeits; opponent wins |
 
-The empty cfg is intentional. The initial one-seat placeholder has no turn. The two-seat opening starts seat 0 in the player-pick phase. The game's `initial` function rejects nonempty cfg bytes, which protects against a mistaken nonempty registration suffix. The four registration values are external operator/attach inputs; this file records the intended values for review.
+The empty cfg is intentional. The initial one-seat placeholder has no turn. The two-seat opening starts seat 0 in the hidden player-commit phase. The game's `initial` function rejects nonempty cfg bytes, which protects against a mistaken nonempty registration suffix. The four registration values are external operator/attach inputs; this file records the intended values for review.
 
 The blob ABI follows the official XAYA Arcade `arcade_*` exports in `arcade-platform/docs/ARCADE-ABI.md` and `engine/judge/wasm_judge.cpp`, mirrored by the official local examples. The pinned build uses wasi-sdk 24.0 in `blob/Dockerfile.blob-builder`; run `bash blob/build-blob.sh`, then `bash blob/check-blob.sh --strict` and, from a clean Git tree, `bash blob/check-blob.sh --rebuild --strict`.
