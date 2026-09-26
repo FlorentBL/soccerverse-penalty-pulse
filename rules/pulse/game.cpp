@@ -110,7 +110,7 @@ int ratingTier(std::uint8_t rating) {
 bool canReach(std::uint32_t keeper, std::uint32_t shooter) {
   const auto rating = goalkeeperRating(keeper);
   const auto targets = scoringTargetCount(shooter);
-  return rating >= 80 ? targets >= 4 : rating >= 70 ? targets >= 6 :
+  return rating >= 80 ? targets >= 5 : rating >= 70 ? targets >= 6 :
     rating >= 60 ? targets >= 8 : false;
 }
 bool adjacent(std::uint8_t first, std::uint8_t second) {

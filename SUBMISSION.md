@@ -23,10 +23,10 @@
 - Remote Git URL: `https://github.com/FlorentBL/soccerverse-penalty-pulse` (private during playground testing)
 - Tested game commit SHA: `51f2e3476025a04ee8f44ff3e385326162c0ab47`
 - WASM path: `blob/rules.wasm`
-- WASM SHA-256: `410d98a85606fcc85c5b3213b08850424435a9f7eac2fbe8c13cc098713993b3`
+- WASM SHA-256: `7ba32b8d8251fa8f7a3579854574093c2b2271fe9ea1f046eb707db70873acc3`
 - State encoding: version 6, fixed 159 bytes
 - Bundle path: `dist/bundle.tar.gz` (generated locally, ignored by Git)
-- Attached playground bundle SHA-256: `fca76e2a0698bf5f28efd68d796717c081278c91045e5cbdd31daf0f61a83e86` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host supplies runtime relay, GSP and Polygon endpoints; the local export intentionally uses blank endpoint variables.
+- Attached playground bundle SHA-256: `800d63d413dccac9bf9de340a928f8dd466ad65c3c0aa5e6b43adcdfdffb46a7` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host supplies runtime relay, GSP and Polygon endpoints; the local export intentionally uses blank endpoint variables.
 - Playground update: `20260926-203911-penalty-pulse-ceb3`; [status](https://test-arcade.xaya.io/api/submissions/20260926-203911-penalty-pulse-ceb3), [play](https://test-arcade.xaya.io/play/penalty-pulse). The disposable playground auto-accepted the five-card bundle: reclaim, preflight, slots, bake, onchain, register, content and verify all passed. This is not a public Arcade submission.
 - Source datapack SHA-256: `d8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e`
 - Soccerverse shooting table SHA-256: `fe0eb9c810a27f17f6ad605ee29669449774bc2a55603e0cfaa6c1e1065abfd6`
@@ -38,7 +38,7 @@
 ## Locally verified
 
 - 179,100 pinned official Soccerverse shooting and goalkeeper values. The goalkeeper snapshot was fetched through the official public MCP `search_players` field `rating_gk`; no unavailable values.
-- Balance from `scripts/measure-balance.py`: 50 cross-team one-penalty matchups score 50–87.5% with optimal randomized zones. Both teams have a 59-rated three-zone shooter at 66.7% against every keeper. These are mathematical shot values, not observed match win rates.
+- Balance from `scripts/measure-balance.py`: 50 cross-team one-penalty matchups score 66.7–87.5% with optimal randomized zones. Both teams have a 59-rated three-zone shooter at 66.7% against every keeper. These are mathematical shot values, not observed match win rates.
 - Native C++ rules: sequential shooter/keeper selection, per-role tier use, keeper reach, rejection of shots outside green zones, invalid/repeated selections, invalid reveals, early decision, paired sudden death, timeout and 254-kick technical cap. Fixed native traces pass.
 - WASM judge: the early-decision and sudden-death traces replay byte for byte; malformed cfg/state/moves, invalid moves, goalkeeper reach, and timeout checks pass. `blob/check-blob.sh --strict` confirms 14 expected exports, zero imports and the pinned WASM toolchain fingerprint.
 - React: nine UI flow tests plus local preview and SDK secret-persistence tests, 25 Vitest tests total; TypeScript checks, SDK CSS check and static bundle build pass. The interface tests check the sequential roles, disabled dark shot zones and a result that remains visible until Continue.

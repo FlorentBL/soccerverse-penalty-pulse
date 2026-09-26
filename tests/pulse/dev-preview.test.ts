@@ -73,6 +73,8 @@ describe('wallet-free local preview', () => {
     const state = select(initialPreviewState());
     expect(canReach(19465, 184)).toBe(true);
     expect(canReach(19465, 1917)).toBe(false);
+    expect(canReach(556, 2866)).toBe(false);
+    expect(canReach(556, 18883)).toBe(true);
     expect(validReach(19465, 184, 6, 8)).toBe(false);
     expect(validReach(19465, 184, 0, 4)).toBe(true);
     expect(validReach(1438, 184, 0, 4)).toBe(false);

@@ -23,7 +23,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'SHOOTER · GREEN ZONES', shotText: 'Official Soccerverse shooting rating determines the number of scoring zones.',
     keeperTitle: 'GOALKEEPER · COVERAGE', keeperText: 'A second zone must touch the first. Its availability depends on both ratings.',
-    low: '1 zone', middle: '2 zones sharing an edge if shooter has enough green zones', elite: '2 touching zones, edge or corner if shooter has 4+ green zones',
+    low: '1 zone', middle: '2 zones sharing an edge if shooter has enough green zones', elite: '2 touching zones, edge or corner if shooter has 5+ green zones',
     finalNote: 'The 20 displayed cards are fixed from pinned Soccerverse ratings and primary FC/GK positions. Arbitrary IDs are rejected. Ownership is not required. Zone patterns and coverage thresholds are Arcade rules.',
   },
   fr: {
@@ -37,7 +37,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'TIREUR · CASES VERTES', shotText: 'La note de tir officielle Soccerverse détermine combien de cases permettent de marquer.',
     keeperTitle: 'GARDIEN · COUVERTURE', keeperText: 'Une deuxième case doit toucher la première. Sa disponibilité dépend des deux notes.',
-    low: '1 case', middle: '2 cases voisines par un côté si le tireur a assez de cases vertes', elite: '2 cases qui se touchent, côté ou coin, si le tireur a au moins 4 cases vertes',
+    low: '1 case', middle: '2 cases voisines par un côté si le tireur a assez de cases vertes', elite: '2 cases qui se touchent, côté ou coin, si le tireur a au moins 5 cases vertes',
     finalNote: 'Les 20 cartes sont fixées selon les notes et postes FC/GK officiels de Soccerverse. Les ID arbitraires sont refusés. Posséder les joueurs n’est pas nécessaire. Les motifs et seuils sont des règles Arcade.',
   },
   it: {
@@ -51,7 +51,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'TIRATORE · ZONE VERDI', shotText: 'Il valore ufficiale di tiro Soccerverse determina il numero di zone valide.',
     keeperTitle: 'PORTIERE · COPERTURA', keeperText: 'La seconda zona deve toccare la prima e dipende dai due valori.',
-    low: '1 zona', middle: '2 zone vicine per lato se il tiratore ha abbastanza zone verdi', elite: '2 zone che si toccano per lato o angolo se il tiratore ha almeno 4 zone verdi',
+    low: '1 zona', middle: '2 zone vicine per lato se il tiratore ha abbastanza zone verdi', elite: '2 zone che si toccano per lato o angolo se il tiratore ha almeno 5 zone verdi',
     finalNote: 'Le 20 carte derivano dai valori e ruoli FC/GK ufficiali Soccerverse. Gli ID arbitrari sono rifiutati. Non è necessario possedere i giocatori. Schemi e soglie sono regole Arcade.',
   },
   es: {
@@ -65,7 +65,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'LANZADOR · ZONAS VERDES', shotText: 'La nota oficial de tiro Soccerverse determina el número de zonas válidas.',
     keeperTitle: 'PORTERO · COBERTURA', keeperText: 'La segunda zona debe tocar la primera y depende de ambas notas.',
-    low: '1 zona', middle: '2 zonas vecinas por un lado si el lanzador tiene suficientes zonas verdes', elite: '2 zonas que se tocan por lado o esquina si el lanzador tiene 4+ zonas verdes',
+    low: '1 zona', middle: '2 zonas vecinas por un lado si el lanzador tiene suficientes zonas verdes', elite: '2 zonas que se tocan por lado o esquina si el lanzador tiene 5+ zonas verdes',
     finalNote: 'Las 20 cartas proceden de notas y posiciones FC/GK oficiales de Soccerverse. Se rechazan los ID arbitrarios. No es necesario poseer los jugadores. Patrones y umbrales son reglas Arcade.',
   },
   pt: {
@@ -79,7 +79,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     ],
     shotTitle: 'MARCADOR · ZONAS VERDES', shotText: 'A nota oficial de remate Soccerverse determina o número de zonas válidas.',
     keeperTitle: 'GUARDA-REDES · COBERTURA', keeperText: 'A segunda zona deve tocar a primeira e depende das duas notas.',
-    low: '1 zona', middle: '2 zonas vizinhas por um lado se o marcador tiver zonas verdes suficientes', elite: '2 zonas que se tocam por lado ou canto se o marcador tiver 4+ zonas verdes',
+    low: '1 zona', middle: '2 zonas vizinhas por um lado se o marcador tiver zonas verdes suficientes', elite: '2 zonas que se tocam por lado ou canto se o marcador tiver 5+ zonas verdes',
     finalNote: 'As 20 cartas vêm de notas e posições FC/GK oficiais de Soccerverse. IDs arbitrários são rejeitados. Não é necessário possuir jogadores. Padrões e limiares são regras Arcade.',
   },
 };
@@ -107,7 +107,7 @@ export default function PulseRules({ onClose }: { onClose: () => void }) {
       <div className="pulse-rules-tables">
         <section><h3>{copy.shotTitle}</h3><p>{copy.shotText}</p><dl>{shotBands.map(([band, zones]) => <div key={band}><dt>{band}</dt><dd>{zones}</dd></div>)}</dl></section>
         <section><h3>{copy.keeperTitle}</h3><p>{copy.keeperText}</p><dl>
-          <div><dt>55–59</dt><dd>{copy.low}</dd></div><div><dt>60–69</dt><dd>{copy.middle} · 8/9</dd></div><div><dt>70–79</dt><dd>{copy.middle} · 6+/9</dd></div><div><dt>80–89</dt><dd>{copy.middle} · 4+/9</dd></div><div><dt>90+</dt><dd>{copy.elite}</dd></div>
+          <div><dt>55–59</dt><dd>{copy.low}</dd></div><div><dt>60–69</dt><dd>{copy.middle} · 8/9</dd></div><div><dt>70–79</dt><dd>{copy.middle} · 6+/9</dd></div><div><dt>80–89</dt><dd>{copy.middle} · 5+/9</dd></div><div><dt>90+</dt><dd>{copy.elite}</dd></div>
         </dl></section>
       </div>
       <p className="pulse-rules-note">{copy.finalNote}</p>

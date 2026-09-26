@@ -69,7 +69,7 @@ export function scoringTargets(id: number): number[] {
 export function canReach(keeperId: number, shooterId: number): boolean {
   const rating = goalkeeperRating(keeperId) ?? -1;
   const targets = scoringTargetCount(shooterId);
-  return rating >= 80 ? targets >= 4 : rating >= 70 ? targets >= 6 : rating >= 60 ? targets >= 8 : false;
+  return rating >= 80 ? targets >= 5 : rating >= 70 ? targets >= 6 : rating >= 60 ? targets >= 8 : false;
 }
 export function adjacent(first: number, second: number): boolean {
   return first !== second && first >= 0 && first <= 8 && second >= 0 && second <= 8 &&

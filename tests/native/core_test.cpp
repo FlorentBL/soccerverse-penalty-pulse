@@ -84,6 +84,7 @@ int main() {
   assert(shootingRating(184) == 97 && goalkeeperRating(19465) == 95);
   assert(scoringTargetCount(184) == 8 && scoringTargetCount(1917) == 3);
   assert(canReach(19465, 184) && !canReach(19465, 1917));
+  assert(!canReach(556, 2866) && canReach(556, 18883));
   assert(!validReach(19465, 184, 6, 8) && validReach(19465, 184, 0, 4));
   assert(!validReach(1438, 184, 0, 4) && validReach(1438, 184, 0, 1));
   select(s, 184, 2932); kick(s, true, 2);

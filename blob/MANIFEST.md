@@ -8,7 +8,7 @@
 | Config suffix | none (`null` in submission JSON; no bytes) |
 | Full cfg delivered to `arcade_initial_state` | 0 bytes |
 | Rules blob | `blob/rules.wasm` |
-| Rules SHA-256 | `410d98a85606fcc85c5b3213b08850424435a9f7eac2fbe8c13cc098713993b3` |
+| Rules SHA-256 | `7ba32b8d8251fa8f7a3579854574093c2b2271fe9ea1f046eb707db70873acc3` |
 | State encoding | version 6, fixed 159 bytes; see `rules/pulse/game.cpp` and `src/lib/pulse/codec.ts` |
 | Turns | Five signed moves per penalty: attacker chooses one of five fixed `FC` shooters, defender chooses one of five fixed `GK` keepers, defender commits a hidden dive, attacker shoots, defender reveals; at most 10 regulation kicks, early finish and paired sudden death, up to 254 total kicks |
 | Timeout | active seat forfeits; opponent wins |

@@ -6,7 +6,7 @@ A free two-player Soccerverse penalty duel for XAYA Arcade. Each player has **fi
 
 1. P1 chooses a shooter; P2 sees that player and chooses a goalkeeper. The defender secretly positions the goalkeeper, then the attacker aims. On the next penalty they swap roles. Only the fixed, position-verified Soccerverse players are legal.
 2. The goal has nine zones. Both players see the shooter's green scoring zones before the goalkeeper is placed. A shooter rated 55–59 has 3 zones; 60–64 has 4; 65–69 has 5; 70–79 has 6; 80–89 has 7; 90+ has 8. Dark zones cannot be selected or submitted to the WASM judge.
-3. A GK rated 55–59 covers one zone. At 60–69, a second edge-touching zone is allowed against a shooter with 8 green zones; at 70–79, against 6+ green zones; at 80–89, against 4+ green zones. A 90+ GK can cover two zones touching by an edge or corner against 4+ green zones. The keeper cannot cover separated zones. Against a three-zone shooter, every GK covers one zone.
+3. A GK rated 55–59 covers one zone. At 60–69, a second edge-touching zone is allowed against a shooter with 8 green zones; at 70–79, against 6+ green zones; at 80–89, against 5+ green zones. A 90+ GK can cover two zones touching by an edge or corner against 5+ green zones. The keeper cannot cover separated zones. Against a three-zone shooter, every GK covers one zone.
 4. A covered shot is saved; an uncovered green-zone shot scores. The defender's committed position is revealed after the shot. The score, animation and result remain visible until **Continue**.
 5. Each side has up to five regulation shots. The game ends early when a comeback is impossible. A tie after five shots each enters paired sudden death; cards may then be reused. The active player forfeits on timeout. A tie at the 254-kick wire limit goes to P1.
 
@@ -22,7 +22,7 @@ The player names, IDs, ratings and FC/GK primary positions come from pinned offi
 
 ## Balance measurement
 
-`python3 scripts/measure-balance.py` computes exact optimal mixed-strategy goal chances for every fixed shooter/keeper pairing from pinned ratings. The 50 cross-team matchups range from **50% to 87.5%**. Both teams have a 59-rated shooter with three green zones (66.7% against any goalkeeper), a 64-rated shooter with four zones, and similar higher-rating options. These are mathematical **one-shot** values, not measured human or full-match win rates. The P1 and P2 distributions are close but not identical; live two-player playtesting remains necessary.
+`python3 scripts/measure-balance.py` computes exact optimal mixed-strategy goal chances for every fixed shooter/keeper pairing from pinned ratings. The 50 cross-team matchups range from **66.7% to 87.5%**. Both teams have a 59-rated shooter with three green zones (66.7% against any goalkeeper), a 64-rated shooter with four zones, and similar higher-rating options. These are mathematical **one-shot** values, not measured human or full-match win rates. The P1 and P2 distributions are close but not identical; live two-player playtesting remains necessary.
 
 ## Play locally
 

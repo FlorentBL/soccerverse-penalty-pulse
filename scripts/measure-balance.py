@@ -33,7 +33,7 @@ def edge_adjacent(a, b):
 
 @lru_cache(None)
 def score_value(targets_, keeper_rating):
-    minimum = (4 if keeper_rating >= 80 else 6 if keeper_rating >= 70 else
+    minimum = (5 if keeper_rating >= 80 else 6 if keeper_rating >= 70 else
                8 if keeper_rating >= 60 else 10)
     if len(targets_) < minimum:
         guards = [(a,) for a in range(9)]
