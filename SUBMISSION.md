@@ -25,7 +25,7 @@
 - WASM path: `blob/rules.wasm`
 - WASM SHA-256: `63073035b19e4bc18297c32bda4cff7d37241afc0a48da1f5bde97d0f8d21973`
 - Bundle path: `dist/bundle.tar.gz` (generated locally, ignored by Git)
-- Local playground bundle SHA-256: `c0ba4298213d45352e9e367755e8ae7101566c383842571477107f37411c7504` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host must supply the runtime relay, GSP and Polygon endpoints; the local export used blank endpoint environment variables.
+- Local playground bundle SHA-256: `2b1c7bc81336451b374b00f20127742d0ec070b0c53d79c307aa50f8f0a07272` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host must supply the runtime relay, GSP and Polygon endpoints; the local export used blank endpoint environment variables.
 - Source datapack SHA-256: `d8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e`
 - Soccerverse shooting table SHA-256: `fe0eb9c810a27f17f6ad605ee29669449774bc2a55603e0cfaa6c1e1065abfd6`
 - SDK: vendored `@xayaarcade/sdk` 0.20.5; version checked against the local platform example snapshot, release commit provenance still needs a real platform Git checkout.
@@ -34,9 +34,10 @@
 
 - Native C++ rules and fixed traces for early win and sudden-death win; 254-kick technical cap checked.
 - WASM judge replay of both traces, byte for byte, plus malformed cfg/state/move, invalid reveal, and timeout checks.
-- React component tests for goalkeeper, player picker, shooting and sudden-death reuse; TypeScript checks; production and static export builds; CSS verification; WASM structural/ABI check.
+- React component tests for goalkeeper, player picker, shooting, sudden-death reuse and the post-reveal shot replay; TypeScript checks; production and static export builds; CSS verification; WASM structural/ABI check.
 - Browser check of the hotseat prototype: pick player → handoff → choose goalkeeper target → handoff → shoot into same target → saved result.
 - Desktop and 320 px browser inspections of the updated wallet-free React preview checked the displayed official shooting rating, reliable-zone count, keeper placement, concealed dive on the striker's turn, and the corrected mobile toolbar and scrolling action button. Component tests verify the sudden-death label and reuse. The full live channel was **not** exercised locally against two wallet identities.
+- Desktop and 320 px browser inspections of the shot animation checked the ball trajectory, keeper dive, result overlay and score update after impact in the wallet-free preview. The replay has not yet been verified in a live two-player playground match.
 
 ## Required before submission
 

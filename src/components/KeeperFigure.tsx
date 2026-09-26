@@ -1,11 +1,14 @@
+import type { CSSProperties } from 'react';
+
 interface KeeperFigureProps {
   lane: number;
   ready?: boolean;
   caught?: boolean;
+  replay?: boolean;
 }
 
 /** A single keeper sprite follows the defender's nine-zone choice. */
-export default function KeeperFigure({ lane, ready = false, caught = false }: KeeperFigureProps) {
+export default function KeeperFigure({ lane, ready = false, caught = false, replay = false }: KeeperFigureProps) {
   const column = lane % 3;
   const row = Math.floor(lane / 3);
   const handY = row === 0 ? 12 : row === 1 ? 47 : 79;
@@ -13,9 +16,10 @@ export default function KeeperFigure({ lane, ready = false, caught = false }: Ke
   const handX = row === 1 ? 5 : 12;
 
   return <div
-    className={`pulse-keeper pulse-keeper-row-${row} pulse-keeper-col-${column}${ready ? ' pulse-keeper-ready' : ''}`}
+    className={`pulse-keeper pulse-keeper-row-${row} pulse-keeper-col-${column}${ready ? ' pulse-keeper-ready' : ''}${replay ? ' pulse-keeper-diving' : ''}`}
     data-testid="pulse-keeper" data-lane={lane} aria-hidden="true"
-    style={{ left: `${(column + 0.5) * 100 / 3}%`, top: `${(row + 0.5) * 100 / 3}%` }}>
+    style={{ left: `${(column + 0.5) * 100 / 3}%`, top: `${(row + 0.5) * 100 / 3}%`,
+      '--keeper-end-x': `${(column + 0.5) * 100 / 3}%`, '--keeper-end-y': `${(row + 0.5) * 100 / 3}%` } as CSSProperties}>
     <span className="pulse-keeper-aura" />
     <svg viewBox="0 0 100 108" focusable="false" aria-hidden="true">
       <defs>

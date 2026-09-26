@@ -14,7 +14,7 @@ function board(phase: number, turn: number) {
     used: [[0, 0, 0], [0, 0, 0]], lastPlayer: 0, lastShot: 255, lastGuard: 255,
   };
 }
-afterEach(() => { submit.mockClear(); act(() => useChannelStore.setState({ boardState: null })); vi.unstubAllGlobals(); });
+afterEach(() => { submit.mockClear(); act(() => useChannelStore.setState({ boardState: null })); vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe('Penalty Pulse touch flow', () => {
   it('lets the defender choose a hidden dive and the striker choose a real player and shot', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ '1100': 'Erling Braut Haaland' }) })));
@@ -95,5 +95,32 @@ describe('Penalty Pulse touch flow', () => {
     });
     render(<LanguageProvider><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
     expect(screen.getByText('KICK 4')).toBeInTheDocument();
+  });
+  it('animates only after reveal, then restores the next kick controls', () => {
+    vi.useFakeTimers();
+    useChannelStore.getState().updateFromBoardState({ ...board(2, 0), pendingPlayer: 1100 });
+    render(<LanguageProvider><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
+    act(() => useChannelStore.getState().updateFromBoardState({
+      ...board(3, 0), pendingPlayer: 1100, pendingLane: 8, lastShot: 8,
+    }));
+    expect(screen.queryByTestId('pulse-shot-replay')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('pulse-keeper')).not.toBeInTheDocument();
+    act(() => useChannelStore.getState().updateFromBoardState({
+      ...board(0, 1), kick: 1, turnCount: 4, lastShot: 8, lastGuard: 8, lastResult: 2,
+    }));
+    expect(screen.getByTestId('pulse-shot-replay')).toHaveClass('pulse-replay-saved');
+    expect(screen.getByTestId('pulse-keeper')).toHaveClass('pulse-keeper-diving');
+    expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '8');
+    act(() => vi.advanceTimersByTime(1900));
+    expect(screen.queryByTestId('pulse-shot-replay')).not.toBeInTheDocument();
+    expect(screen.getByText('SAVED')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Erling Braut Haaland/ })).toBeEnabled();
+    act(() => useChannelStore.getState().updateFromBoardState({
+      ...board(0, 0), kick: 2, turnCount: 8, goals: [0, 1], lastShot: 2, lastGuard: 4, lastResult: 1,
+    }));
+    expect(screen.getByTestId('pulse-shot-replay')).toHaveClass('pulse-replay-goal');
+    expect(document.querySelectorAll('.pulse-score-side strong')[1]).toHaveTextContent('0');
+    act(() => vi.advanceTimersByTime(1900));
+    expect(document.querySelectorAll('.pulse-score-side strong')[1]).toHaveTextContent('1');
   });
 });
