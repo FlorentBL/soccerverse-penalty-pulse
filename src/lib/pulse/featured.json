@@ -1,8 +1,8 @@
 [
   {"id": 184, "name": "Harry Kane", "role": "striker"},
-  {"id": 1100, "name": "Erling Braut Haaland", "role": "striker"},
-  {"id": 278, "name": "Kylian Mbappé Lottin", "role": "striker"},
+  {"id": 1460, "name": "Bukayo Saka", "role": "striker"},
+  {"id": 159, "name": "Hugo Lloris", "role": "striker"},
   {"id": 19465, "name": "David Raya Martin", "role": "keeper"},
-  {"id": 22221, "name": "Mike Maignan", "role": "keeper"},
-  {"id": 1438, "name": "Bernd Leno", "role": "keeper"}
+  {"id": 1438, "name": "Bernd Leno", "role": "keeper"},
+  {"id": 62, "name": "Ethan Horvath", "role": "keeper"}
 ]

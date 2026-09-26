@@ -19,40 +19,55 @@ std::array<std::uint8_t, 32> salt(int seed) {
   for (int i = 0; i < 32; ++i) out[i] = std::uint8_t(seed + i);
   return out;
 }
-std::array<std::uint8_t, 5> pick(std::uint32_t id) {
-  return {4, std::uint8_t(id), std::uint8_t(id >> 8), std::uint8_t(id >> 16), std::uint8_t(id >> 24)};
+void put32(std::uint8_t* p, std::uint32_t id) {
+  for (int i = 0; i < 4; ++i) p[i] = std::uint8_t(id >> (8 * i));
+}
+std::array<std::uint8_t, 9> pick(std::uint32_t shooter, std::uint32_t keeper) {
+  std::array<std::uint8_t, 9> out{};
+  out[0] = 4; put32(out.data() + 1, shooter); put32(out.data() + 5, keeper);
+  return out;
 }
 int main() {
-  constexpr std::uint32_t ids[] = {1100,278,154,874,129718,1,1100,278};
+  constexpr std::uint32_t shooters0[3] = {184, 1460, 159};
+  constexpr std::uint32_t keepers0[3] = {19465, 1438, 62};
+  constexpr std::uint32_t shooters1[3] = {1100, 129718, 21};
+  constexpr std::uint32_t keepers1[3] = {22221, 2932, 189};
   for (int mode = 0; mode < 2; ++mode) {
     State s; initial(2, nullptr, 0, s);
     std::cout << "mode " << mode << '\n';
     const auto initialBytes = encode(s); hex(initialBytes.data(), initialBytes.size()); std::cout << '\n';
     for (int k = 0; k < (mode == 0 ? 4 : 8); ++k) {
       if (k % 2 == 0) {
+        const int round = k / 2 < 3 ? k / 2 : 0;
         const auto secret = salt(k + 40);
-        const auto id = ids[k];
-        std::uint8_t pre[38] = {0x50, std::uint8_t(k / 2), std::uint8_t(id), std::uint8_t(id >> 8),
-                                std::uint8_t(id >> 16), std::uint8_t(id >> 24)};
-        std::memcpy(pre + 6, secret.data(), 32);
+        std::uint8_t pre[42] = {0x50, std::uint8_t(k / 2)};
+        put32(pre + 2, shooters0[round]); put32(pre + 6, keepers0[round]);
+        std::memcpy(pre + 10, secret.data(), 32);
         std::array<std::uint8_t, 33> commit{}; commit[0] = 5;
         pulse_sha256(pre, sizeof(pre), commit.data() + 1); step(s, commit);
-        step(s, pick(ids[k + 1]));
-        std::array<std::uint8_t, 37> reveal{}; reveal[0] = 6;
-        const auto p = pick(id); std::memcpy(reveal.data() + 1, p.data() + 1, 4);
-        std::memcpy(reveal.data() + 5, secret.data(), 32); step(s, reveal);
+        step(s, pick(shooters1[round], keepers1[round]));
+        std::array<std::uint8_t, 41> reveal{}; reveal[0] = 6;
+        put32(reveal.data() + 1, shooters0[round]); put32(reveal.data() + 5, keepers0[round]);
+        std::memcpy(reveal.data() + 9, secret.data(), 32); step(s, reveal);
       }
-      const auto striker = s.pairPlayers[k % 2];
+      const auto striker = s.pairShooters[k % 2];
+      const auto keeper = s.pairKeepers[1 - k % 2];
       std::uint8_t target = 0; while (!isScoringTarget(striker, target)) ++target;
       const bool goal = mode == 0 ? k % 2 == 0 : k == 6;
       const auto guard = std::uint8_t(goal ? (target + 1) % 9 : target);
+      std::uint8_t reach = 255;
+      if (canReach(keeper, striker))
+        for (std::uint8_t i = 0; i < 9; ++i)
+          if (validReach(keeper, striker, guard, i) && (!goal || i != target)) {
+            reach = i; break;
+          }
       const auto secret = salt(k + 60);
-      std::uint8_t pre[36] = {0x47, std::uint8_t(k), guard, 255};
+      std::uint8_t pre[36] = {0x47, std::uint8_t(k), guard, reach};
       std::memcpy(pre + 4, secret.data(), 32);
       std::array<std::uint8_t, 33> commit{}; commit[0] = 1;
       pulse_sha256(pre, sizeof(pre), commit.data() + 1); step(s, commit);
       step(s, std::array<std::uint8_t, 2>{2, target});
-      std::array<std::uint8_t, 35> reveal{}; reveal[0] = 3; reveal[1] = guard; reveal[2] = 255;
+      std::array<std::uint8_t, 35> reveal{}; reveal[0] = 3; reveal[1] = guard; reveal[2] = reach;
       std::memcpy(reveal.data() + 3, secret.data(), 32); step(s, reveal);
     }
   }

@@ -130,6 +130,9 @@
 .pulse-step-index { color: var(--lime); font-family: Impact, 'Arial Narrow', sans-serif; font-size: 44px; font-style: italic; line-height: .9; }
 .pulse-step small, .pulse-featured > small { display: block; color: #a1c3a9; font-size: 10px; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
 .pulse-step p { margin: 5px 0 0; color: #f5f8eb; font-size: clamp(15px, 1.4vw, 19px); font-weight: 800; line-height: 1.19; letter-spacing: -.025em; }
+.pulse-target-intel { display: grid; gap: 4px; padding: 9px 11px; border: 1px solid #d9fb7488; background: #244632; }
+.pulse-target-intel span { color: #eaffc6; font-size: 10px; font-weight: 950; letter-spacing: .12em; }
+.pulse-target-intel strong { color: #f8ffde; font-family: Impact, 'Arial Narrow', sans-serif; font-size: 18px; letter-spacing: .11em; }
 .pulse-role-plan { padding: 10px; border: 1px solid #b1d6837a; background: linear-gradient(105deg, #254836c9, #102d25d9); }
 .pulse-role-plan > span { color: #d9fb74; font-size: 10px; font-weight: 950; letter-spacing: .15em; }
 .pulse-role-plan ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 7px 0 0; padding: 0; list-style: none; }
@@ -137,6 +140,21 @@
 .pulse-role-plan li b { color: #d9fb74; font: italic 20px Impact, 'Arial Narrow', sans-serif; }
 .pulse-role-plan li.active { border-color: #dcff88; background: #416b39; box-shadow: inset 0 0 18px #d9fb7422, 0 0 14px #d9fb742e; }
 .pulse-picker { display: flex; flex-direction: column; gap: 10px; }
+.pulse-tier-rule { margin: 0; color: #dceebf; font-size: 12px; font-weight: 800; line-height: 1.35; }
+.pulse-roster { display: grid; gap: 9px; padding: 11px; border: 1px solid #a8d1836e; background: #0b291f; }
+.pulse-roster-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+.pulse-roster-head > div { display: flex; align-items: baseline; gap: 8px; }
+.pulse-roster-head span { color: #d9fb74; font: italic 24px Impact, 'Arial Narrow', sans-serif; }
+.pulse-roster-head strong { color: #f6fbe8; font-size: 12px; font-weight: 950; letter-spacing: .12em; }
+.pulse-roster-head small { max-width: 55%; color: #d9fb74; font-size: 10px; font-weight: 850; text-align: right; }
+.pulse-roster-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.pulse-roster-cards button { position: relative; display: grid; grid-template-columns: 1fr auto; align-content: start; gap: 5px; min-width: 0; min-height: 78px; padding: 7px; border: 1px solid #9dbb9269; border-radius: 2px; background: #173d2f; color: #eff8df; text-align: left; }
+.pulse-roster-cards button:hover:not(:disabled), .pulse-roster-cards button.active { border-color: #e9ff9c; background: #315b38; box-shadow: inset 0 0 20px #d9fb7423; }
+.pulse-roster-cards button:disabled { opacity: .43; }
+.pulse-card-band { grid-column: 1 / -1; color: #d9fb74; font-size: 10px; font-weight: 950; letter-spacing: .1em; }
+.pulse-roster-cards strong { min-width: 0; font-size: 11px; line-height: 1.13; overflow-wrap: anywhere; }
+.pulse-roster-cards b { color: #d9fb74; font: italic 22px Impact, 'Arial Narrow', sans-serif; }
+.pulse-roster-cards em { position: absolute; right: 4px; bottom: 3px; color: #f0ffc8; font-size: 8px; font-style: normal; font-weight: 950; }
 .pulse-picker label { color: #c0dbbd; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
 .pulse-search { display: flex; gap: 8px; }
 .pulse-search input { width: 100%; min-width: 0; flex: 1; border: 1px solid #7ba78a88; border-radius: 2px; padding: 10px 13px; background: #061b17; color: #f5fae9; font-size: 16px; }
@@ -202,6 +220,13 @@
   .pulse-replay-result { top: 69%; font-size: clamp(36px, 11vw, 56px); }
 }
 @media (max-width: 390px) { .pulse-root { padding-inline: 8px; }.pulse-arena { padding-inline: 7px; }.pulse-console { padding: 12px; }.pulse-action { left: 82px; width: calc(100vw - 90px); font-size: 10px!important; letter-spacing: .03em; }.pulse-role-plan li { gap: 5px; padding: 5px; font-size: 9px; }.pulse-role-plan li b { font-size: 17px; } }
+@media (max-width: 360px) {
+  .pulse-roster-cards { grid-template-columns: 1fr; }
+  .pulse-roster-cards button { grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; min-height: 46px; }
+  .pulse-card-band { grid-column: 1; }
+  .pulse-roster-cards strong { font-size: 12px; overflow-wrap: normal; }
+  .pulse-roster-cards b { grid-column: 3; }
+}
 @media (prefers-reduced-motion: reduce) { .pulse-root *, .pulse-root *::before, .pulse-root *::after { transition-duration: 0.01ms!important; animation-duration: 0.01ms!important; } }
 
 .pulse-zone.pulse-reach { box-shadow: inset 0 0 0 3px #d9ff75, 0 0 28px #c9ff6070; }

@@ -1,14 +1,15 @@
 import type { PulseInput } from './channel';
-import { adjacent, canReach, scoringTargetCount, scoringTargets, type PulseState } from './codec';
+import { goalkeeperRating, ratingTier, scoringTargets, shootingRating, tierUsed, validReach, type PulseState } from './codec';
 
 export interface PreviewGuard { lane: number; reach: number }
 /** Local UI rehearsal only. Real matches are judged by rules.wasm through the SDK. */
 export function initialPreviewState(): PulseState {
   return {
     participants: 2, phase: 0, turn: 0, kick: 0, goals: [0, 0], winner: -1,
-    turnCount: 0, pendingPlayer: 0, pendingLane: 255, lastResult: 0,
-    used: [[0, 0, 0], [0, 0, 0]], lastPlayer: 0, lastShot: 255, lastGuard: 255,
-    pairPlayers: [0, 0], lastReach: 255,
+    turnCount: 0, pendingShooter: 0, pendingKeeper: 0, pendingLane: 255, lastResult: 0,
+    usedShooters: [[0, 0, 0], [0, 0, 0]], usedKeepers: [[0, 0, 0], [0, 0, 0]],
+    lastPlayer: 0, lastKeeper: 0, lastShot: 255, lastGuard: 255,
+    pairShooters: [0, 0], pairKeepers: [0, 0], lastReach: 255,
   };
 }
 function scoreWinner(kick: number, goals: [number, number]): number {
@@ -28,26 +29,33 @@ export function advancePreview(
   const shooter = state.kick % 2;
   if ((state.phase === 0 || state.phase === 1) && input.type === 'pick') {
     const seat = state.phase;
-    if (!Number.isInteger(input.playerId) || scoringTargetCount(input.playerId) === 0 ||
-        state.kick < 6 && state.used[seat].includes(input.playerId)) return null;
+    if (!Number.isInteger(input.shooterId) || !Number.isInteger(input.keeperId) ||
+        input.shooterId === input.keeperId || ratingTier(shootingRating(input.shooterId)) < 0 ||
+        ratingTier(goalkeeperRating(input.keeperId)) < 0 || state.kick < 6 &&
+        (tierUsed(state.usedShooters[seat], input.shooterId, 'shoot') ||
+         tierUsed(state.usedKeepers[seat], input.keeperId, 'save'))) return null;
     if (seat === 0) return {
-      state: { ...state, phase: 1, turn: 1, pendingPlayer: input.playerId, turnCount: state.turnCount + 1 },
+      state: { ...state, phase: 1, turn: 1, pendingShooter: input.shooterId, pendingKeeper: input.keeperId, turnCount: state.turnCount + 1 },
       keeperChoice: null,
     };
-    const pairPlayers: [number, number] = [state.pendingPlayer, input.playerId];
-    const used: [number[], number[]] = [state.used[0].slice(), state.used[1].slice()];
+    const pairShooters: [number, number] = [state.pendingShooter, input.shooterId];
+    const pairKeepers: [number, number] = [state.pendingKeeper, input.keeperId];
+    const usedShooters: [number[], number[]] = [state.usedShooters[0].slice(), state.usedShooters[1].slice()];
+    const usedKeepers: [number[], number[]] = [state.usedKeepers[0].slice(), state.usedKeepers[1].slice()];
     if (state.kick < 6) {
-      used[0][Math.floor(state.kick / 2)] = pairPlayers[0];
-      used[1][Math.floor(state.kick / 2)] = pairPlayers[1];
+      usedShooters[0][Math.floor(state.kick / 2)] = pairShooters[0];
+      usedShooters[1][Math.floor(state.kick / 2)] = pairShooters[1];
+      usedKeepers[0][Math.floor(state.kick / 2)] = pairKeepers[0];
+      usedKeepers[1][Math.floor(state.kick / 2)] = pairKeepers[1];
     }
     return {
-      state: { ...state, phase: 3, turn: 1, pendingPlayer: 0, pairPlayers, used,
+      state: { ...state, phase: 3, turn: 1, pendingShooter: 0, pendingKeeper: 0,
+        pairShooters, pairKeepers, usedShooters, usedKeepers,
         turnCount: state.turnCount + 2 }, keeperChoice: null,
     };
   }
   if (state.phase === 3 && input.type === 'guard' && Number.isInteger(input.lane) && input.lane >= 0 && input.lane <= 8) {
-    const reach = canReach(state.pairPlayers[1 - shooter], state.pairPlayers[shooter]);
-    if (reach ? !adjacent(input.lane, input.reach) : input.reach !== 255) return null;
+    if (!validReach(state.pairKeepers[1 - shooter], state.pairShooters[shooter], input.lane, input.reach)) return null;
     return {
       state: { ...state, phase: 4, turn: shooter, turnCount: state.turnCount + 1 },
       keeperChoice: { lane: input.lane, reach: input.reach },
@@ -55,7 +63,8 @@ export function advancePreview(
   }
   if (state.phase === 4 && input.type === 'shot' && keeperChoice &&
       Number.isInteger(input.lane) && input.lane >= 0 && input.lane <= 8) {
-    const striker = state.pairPlayers[shooter];
+    const striker = state.pairShooters[shooter];
+    const keeper = state.pairKeepers[1 - shooter];
     const result = input.lane === keeperChoice.lane || input.lane === keeperChoice.reach ? 2 :
       scoringTargets(striker).includes(input.lane) ? 1 : 3;
     const goals: [number, number] = [...state.goals];
@@ -69,8 +78,9 @@ export function advancePreview(
         ...state, phase: finished ? 6 : nextPair ? 0 : 3,
         turn: finished ? 255 : nextPair ? 0 : 0,
         kick, goals, winner, turnCount: state.turnCount + 2,
-        pendingLane: 255, pairPlayers: nextPair ? [0, 0] : state.pairPlayers,
-        lastResult: result, lastPlayer: striker, lastShot: input.lane,
+        pendingLane: 255, pairShooters: nextPair ? [0, 0] : state.pairShooters,
+        pairKeepers: nextPair ? [0, 0] : state.pairKeepers,
+        lastResult: result, lastPlayer: striker, lastKeeper: keeper, lastShot: input.lane,
         lastGuard: keeperChoice.lane, lastReach: keeperChoice.reach,
       }, keeperChoice: null,
     };

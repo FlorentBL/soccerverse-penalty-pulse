@@ -1,26 +1,26 @@
 # Penalty Pulse
 
-A free, fast two-player Soccerverse penalty duel for XAYA Arcade. Each player selects **one Soccerverse footballer per round**. That footballer takes their penalty and guards the opponent's penalty. The best shooter is therefore not automatically the best choice.
+A free, fast two-player Soccerverse penalty duel for XAYA Arcade. For each pair of penalties, each player secretly chooses a **shooter and a different goalkeeper** from Soccerverse. Regulation requires a 90+ pick, a 75–89 pick and a 55–74 pick in each role, so even a three-zone underdog gets a turn.
 
 ## Rules
 
-1. Seat 0 commits a hidden player choice, seat 1 selects a player, then seat 0 reveals their committed choice. Neither can counter-pick after seeing the other's selection. Each seat must use three different players in regulation; players can be reused in sudden death.
-2. The first penalty of the pair is taken by seat 0, the second by seat 1. For each penalty, the defending player chooses a secret primary keeper position in the nine-zone goal. An official Soccerverse `rating_gk` of **75 or higher** also lets them choose one **adjacent** second position if the striker has at least four reliable zones. The striker never sees these positions before aiming.
-3. The official Soccerverse `rating_shooting` determines 2–8 reliable zones: below 55 → 2, 55–59 → 3, 60–64 → 4, 65–69 → 5, 70–79 → 6, 80–89 → 7, 90–100 → 8. A strong goalkeeper uses an Arcade **keeper-focus** rule: their own shot is capped at four reliable zones, regardless of their shooting rating. The four-zone pattern is rotated by player ID and has a balanced adjacency shape.
-4. A shot into either position covered by the keeper is saved. An uncovered shot scores only in one of the striker's reliable zones; other shots go wide. The defender's choice is committed with SHA-256 and revealed after the shot.
+1. Seat 0 commits a hidden shooter and goalkeeper choice, seat 1 chooses their pair, then seat 0 reveals. Neither can counter-pick after seeing the other's selection. In the three regulation pairs, each seat must use one 90+, one 75–89 and one 55–74 player as shooter, and likewise as goalkeeper. The two players chosen for a pair must be different. Players and tiers can be reused in sudden death.
+2. Seat 0 shoots first in each pair, then seat 1. Before every shot, the defender sees exactly which of the nine numbered zones are reliable for the selected shooter. The defender secretly places their goalkeeper; the shooter sees the scoring zones but not the keeper's position before aiming.
+3. The pinned official Soccerverse `rating_shooting` determines reliable zones: 55–59 → 3, 60–64 → 4, 65–69 → 5, 70–79 → 6, 80–89 → 7, 90–100 → 8. Ratings below 55 cannot be selected. The zone pattern rotates by player ID. An official `rating_gk` of 55–74 covers one zone. At 75–89 it covers two adjacent zones, and at 90+ any two distinct zones, provided the shooter has at least four reliable zones. Against a three-zone shooter every keeper covers one zone.
+4. A shot into a covered position is saved. An uncovered shot scores only in a reliable zone; other shots go wide. The defender's choice is committed with SHA-256 and revealed after the shot.
 5. Both players receive up to three regulation penalties. The match can end early if the trailing player cannot catch up. A tie enters paired sudden death and ends when the scores differ after both have shot. A timed-out active player forfeits. At the 254-kick wire limit, a remaining tie is awarded to the first shooter.
 
-The player IDs, names, `rating_shooting` and `rating_gk` are pinned from official Soccerverse sources for 179,100 players. Thresholds, keeper focus and target patterns are **Arcade game rules**. Player ownership is not required. There are no live Soccerverse API calls during a match.
+The player IDs, names, `rating_shooting` and `rating_gk` are pinned from official Soccerverse sources for 179,100 players. The tier limits, zone patterns and keeper coverage are **Arcade game rules**. Player ownership is not required. There are no live Soccerverse API calls during a match.
 
 ## Balance measurement
 
-Run `python3 scripts/measure-balance.py` with SciPy. On the pinned data there are 708 players with goalkeeper rating at least 75 and 55 players with shooting at least 90 and goalkeeper rating below 75. The quick picks show three of each. With optimal randomized lane choices, every displayed striker-versus-keeper matchup gives **75% scoring probability to each side**. Two displayed strikers score 87.5% each; two displayed keepers score 50% each. These are mathematical one-penalty values for the deterministic rules, not measured human win rates. The script prints all nine displayed cross-role comparisons.
+Run `python3 scripts/measure-balance.py` with SciPy. Among the pinned players, the shooter tiers have 55 / 3,432 / 107,471 choices and the goalkeeper tiers have 16 / 692 / 15,796 choices. The featured picks demonstrate each band. With optimal randomized zone choices, the nine featured shooter-versus-keeper matchups score between **66.7% and 87.5%**: Kane (97) scores 75% against Raya (95) or Leno (89), and 87.5% against Horvath (74); Lloris (58, three zones) scores 66.7% against all three. These are mathematical one-penalty values, not measured human win rates or full-match win rates.
 
 ## Play locally
 
 Run `npm ci && npm run dev`, then open `http://localhost:3001/?preview=1` or select **Preview without wallet**. The full React board runs a local hotseat game without a wallet. It has the same selection, zone, save and scoring logic as the WASM judge; the online match remains judged by `blob/rules.wasm` through the official XAYA Arcade SDK. The interface defaults to English, with French, Italian, Spanish and Portuguese available. For a phone on the same Wi-Fi, open `http://<machine-LAN-IP>:3001/?preview=1` while the dev server is running.
 
-The first player's pick and each goalkeeper choice use local 32-byte salts stored per channel, seat and kick. Keep the same browser through reveal; losing a secret before reveal can lead to a timeout. The hotseat demo skips cryptographic handoff and is for UI rehearsal only. The original static HTML in `prototype/` is an archived early prototype and does not implement the current dual-role rules.
+The first player's pair of picks and each goalkeeper choice use local 32-byte salts stored per channel, seat and kick. Keep the same browser through reveal; losing a secret before reveal can lead to a timeout. The hotseat demo skips cryptographic handoff and is for UI rehearsal only. The original static HTML in `prototype/` is an archived early prototype and does not implement the current rules.
 
 ## Build and submission
 

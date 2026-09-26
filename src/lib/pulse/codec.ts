@@ -11,47 +11,58 @@ export interface PulseState {
   goals: [number, number];
   winner: number;
   turnCount: number;
-  pendingPlayer: number;
+  pendingShooter: number;
+  pendingKeeper: number;
   pendingLane: number;
   lastResult: number;
-  used: [number[], number[]];
+  usedShooters: [number[], number[]];
+  usedKeepers: [number[], number[]];
   lastPlayer: number;
+  lastKeeper: number;
   lastShot: number;
   lastGuard: number;
-  pairPlayers: [number, number];
+  pairShooters: [number, number];
+  pairKeepers: [number, number];
   lastReach: number;
 }
 
 export function decodeState(bytes: Uint8Array, participants: number): PulseState | null {
-  if (bytes.length !== 87 || bytes[0] !== 2 || bytes[1] !== participants || bytes[2] > 6) return null;
+  if (bytes.length !== 127 || bytes[0] !== 3 || bytes[1] !== participants || bytes[2] > 6) return null;
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const used: [number[], number[]] = [
+  const usedShooters: [number[], number[]] = [
     [v.getUint32(48, true), v.getUint32(52, true), v.getUint32(56, true)],
     [v.getUint32(60, true), v.getUint32(64, true), v.getUint32(68, true)],
+  ];
+  const usedKeepers: [number[], number[]] = [
+    [v.getUint32(95, true), v.getUint32(99, true), v.getUint32(103, true)],
+    [v.getUint32(107, true), v.getUint32(111, true), v.getUint32(115, true)],
   ];
   return {
     participants, phase: bytes[2] as PulseState['phase'], turn: bytes[3], kick: bytes[4],
     goals: [bytes[5], bytes[6]], winner: v.getInt8(7), turnCount: v.getUint16(8, true),
-    pendingPlayer: v.getUint32(42, true), pendingLane: bytes[46], lastResult: bytes[47],
-    used, lastPlayer: v.getUint32(72, true), lastShot: bytes[76], lastGuard: bytes[77],
-    pairPlayers: [v.getUint32(78, true), v.getUint32(82, true)], lastReach: bytes[86],
+    pendingShooter: v.getUint32(42, true), pendingKeeper: v.getUint32(119, true), pendingLane: bytes[46], lastResult: bytes[47],
+    usedShooters, usedKeepers, lastPlayer: v.getUint32(72, true), lastKeeper: v.getUint32(123, true), lastShot: bytes[76], lastGuard: bytes[77],
+    pairShooters: [v.getUint32(78, true), v.getUint32(82, true)], pairKeepers: [v.getUint32(87, true), v.getUint32(91, true)], lastReach: bytes[86],
   };
 }
 
+export function ratingTier(rating: number | null): number {
+  return rating !== null && rating >= 90 && rating <= 100 ? 0 : rating !== null && rating >= 75 && rating < 90 ? 1 :
+    rating !== null && rating >= 55 && rating < 75 ? 2 : -1;
+}
+export function tierUsed(ids: number[], id: number, role: 'shoot' | 'save'): boolean {
+  const rating = role === 'shoot' ? shootingRating : goalkeeperRating;
+  const tier = ratingTier(rating(id));
+  return ids.some(previous => previous !== 0 && ratingTier(rating(previous)) === tier);
+}
 export function scoringTargetCount(id: number): number {
   const rating = shootingRating(id);
   if (rating === null || goalkeeperRating(id) === null) return 0;
   const count = rating < 55 ? 2 : rating < 60 ? 3 : rating < 65 ? 4 :
     rating < 70 ? 5 : rating < 80 ? 6 : rating < 90 ? 7 : 8;
-  return (goalkeeperRating(id) ?? 0) >= 75 ? Math.min(count, 4) : count;
+  return count;
 }
 export function scoringTargets(id: number): number[] {
-  if ((goalkeeperRating(id) ?? 0) >= 75 && scoringTargetCount(id) === 4) {
-    return [0, 1, 7, 8].map(lane => {
-      for (let turn = 0; turn < id % 4; turn++) lane = 3 * (lane % 3) + 2 - Math.floor(lane / 3);
-      return lane;
-    });
-  }
   const steps = [1, 2, 4, 5, 7, 8];
   const start = id % 9;
   const step = steps[Math.floor(id / 9) % 6];
@@ -65,28 +76,37 @@ export function adjacent(first: number, second: number): boolean {
     Math.abs(first % 3 - second % 3) <= 1 &&
     Math.abs(Math.floor(first / 3) - Math.floor(second / 3)) <= 1;
 }
-export function encodePick(id: number): Uint8Array {
-  const b = new Uint8Array(5);
+export function validReach(keeperId: number, shooterId: number, first: number, second: number): boolean {
+  if (first < 0 || first > 8) return false;
+  if (!canReach(keeperId, shooterId)) return second === 255;
+  if (second < 0 || second > 8 || second === first) return false;
+  return (goalkeeperRating(keeperId) ?? 0) >= 90 || adjacent(first, second);
+}
+export function encodePick(shooter: number, keeper: number): Uint8Array {
+  const b = new Uint8Array(9);
   b[0] = 4;
-  new DataView(b.buffer).setUint32(1, id, true);
+  new DataView(b.buffer).setUint32(1, shooter, true);
+  new DataView(b.buffer).setUint32(5, keeper, true);
   return b;
 }
 export function encodeShot(lane: number): Uint8Array { return Uint8Array.of(2, lane); }
 async function sha(bytes: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array(bytes)));
 }
-export async function encodePickCommit(round: number, id: number, salt: Uint8Array): Promise<Uint8Array> {
-  const preimage = new Uint8Array(38);
+export async function encodePickCommit(round: number, shooter: number, keeper: number, salt: Uint8Array): Promise<Uint8Array> {
+  const preimage = new Uint8Array(42);
   preimage[0] = 0x50; preimage[1] = round;
-  new DataView(preimage.buffer).setUint32(2, id, true);
-  preimage.set(salt, 6);
+  new DataView(preimage.buffer).setUint32(2, shooter, true);
+  new DataView(preimage.buffer).setUint32(6, keeper, true);
+  preimage.set(salt, 10);
   const move = new Uint8Array(33);
   move[0] = 5; move.set(await sha(preimage), 1);
   return move;
 }
-export function encodePickReveal(id: number, salt: Uint8Array): Uint8Array {
-  const b = new Uint8Array(37);
-  b[0] = 6; new DataView(b.buffer).setUint32(1, id, true); b.set(salt, 5);
+export function encodePickReveal(shooter: number, keeper: number, salt: Uint8Array): Uint8Array {
+  const b = new Uint8Array(41);
+  b[0] = 6; new DataView(b.buffer).setUint32(1, shooter, true);
+  new DataView(b.buffer).setUint32(5, keeper, true); b.set(salt, 9);
   return b;
 }
 export async function encodeCommit(kick: number, guard: number, reach: number, salt: Uint8Array): Promise<Uint8Array> {

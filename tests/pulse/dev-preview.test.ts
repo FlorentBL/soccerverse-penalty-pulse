@@ -1,21 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { adjacent, canReach, goalkeeperRating, scoringTargets, shootingRating, type PulseState } from '@/lib/pulse/codec';
+import { canReach, goalkeeperRating, ratingTier, scoringTargets, shootingRating, validReach, type PulseState } from '@/lib/pulse/codec';
 import { advancePreview, initialPreviewState, type PreviewGuard } from '@/lib/pulse/dev-preview';
 
-function pair(state: PulseState, first: number, second: number): PulseState {
-  const one = advancePreview(state, { type: 'pick', kick: state.kick, playerId: first }, null);
+const shooters0 = [184, 1460, 159];
+const keepers0 = [19465, 1438, 62];
+const shooters1 = [1100, 129718, 21];
+const keepers1 = [22221, 2932, 189];
+function pair(state: PulseState, round: number): PulseState {
+  const i = round < 3 ? round : 0;
+  const one = advancePreview(state, { type: 'pick', kick: state.kick,
+    shooterId: shooters0[i], keeperId: keepers0[i] }, null);
   expect(one?.state.phase).toBe(1);
-  const two = advancePreview(one!.state, { type: 'pick', kick: state.kick, playerId: second }, null);
+  const two = advancePreview(one!.state, { type: 'pick', kick: state.kick,
+    shooterId: shooters1[i], keeperId: keepers1[i] }, null);
   expect(two?.state.phase).toBe(3);
   return two!.state;
 }
 function kick(state: PulseState, scores: boolean): PulseState {
-  const striker = state.pairPlayers[state.kick % 2];
-  const keeper = state.pairPlayers[1 - state.kick % 2];
+  const striker = state.pairShooters[state.kick % 2];
+  const keeper = state.pairKeepers[1 - state.kick % 2];
   const target = scoringTargets(striker)[0];
   const primary = scores ? (target + 1) % 9 : target;
   const reach = canReach(keeper, striker)
-    ? Array.from({ length: 9 }, (_, i) => i).find(i => adjacent(primary, i) && (!scores || i !== target))!
+    ? Array.from({ length: 9 }, (_, i) => i).find(i => validReach(keeper, striker, primary, i) && (!scores || i !== target))!
     : 255;
   const committed = advancePreview(state, { type: 'guard', kick: state.kick, lane: primary, reach }, null);
   expect(committed?.state.phase).toBe(4);
@@ -26,58 +33,59 @@ function kick(state: PulseState, scores: boolean): PulseState {
 }
 
 describe('wallet-free local preview', () => {
-  it('plays paired penalties with the same selected player shooting and guarding', () => {
-    let state = pair(initialPreviewState(), 1100, 19465);
-    expect(state.pairPlayers).toEqual([1100, 19465]);
+  it('plays a pair with separate shooters and keepers', () => {
+    let state = pair(initialPreviewState(), 0);
+    expect(state.pairShooters).toEqual([184, 1100]);
+    expect(state.pairKeepers).toEqual([19465, 22221]);
     state = kick(state, true);
     expect(state).toMatchObject({ phase: 3, kick: 1, goals: [1, 0] });
-    expect(state.pairPlayers).toEqual([1100, 19465]);
     state = kick(state, false);
     expect(state).toMatchObject({ phase: 0, kick: 2, goals: [1, 0], turnCount: 9 });
   });
   it('ends early after two unanswered goals', () => {
     let state = initialPreviewState();
-    state = pair(state, 1100, 278);
+    state = pair(state, 0);
     state = kick(state, true); state = kick(state, false);
-    state = pair(state, 154, 874);
+    state = pair(state, 1);
     state = kick(state, true); state = kick(state, false);
     expect(state).toMatchObject({ phase: 6, kick: 4, goals: [2, 0], winner: 0, turnCount: 18 });
   });
-  it('plays sudden death after a tie and permits reuse', () => {
+  it('plays sudden death after a tie and permits tier reuse', () => {
     let state = initialPreviewState();
-    for (const [a, b] of [[1100, 278], [154, 874], [129718, 1]]) {
-      state = pair(state, a, b); state = kick(state, false); state = kick(state, false);
+    for (let round = 0; round < 3; round++) {
+      state = pair(state, round); state = kick(state, false); state = kick(state, false);
     }
     expect(state).toMatchObject({ phase: 0, kick: 6, goals: [0, 0] });
-    state = pair(state, 1100, 278);
+    state = pair(state, 3);
     state = kick(state, true); state = kick(state, false);
     expect(state).toMatchObject({ phase: 6, kick: 8, goals: [1, 0], winner: 0 });
   });
-  it('requires adjacent reach only for a strong goalkeeper facing at least four zones', () => {
-    const state = pair(initialPreviewState(), 1100, 19465);
-    expect(canReach(19465, 1100)).toBe(true);
-    expect(canReach(19465, 1)).toBe(false);
-    expect(advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 8 }, null)).toBeNull();
+  it('differentiates elite, strong and underdog goalkeeper coverage', () => {
+    const state = pair(initialPreviewState(), 0);
+    expect(canReach(19465, 184)).toBe(true);
+    expect(canReach(19465, 159)).toBe(false);
+    expect(validReach(19465, 184, 0, 8)).toBe(true);
+    expect(validReach(1438, 184, 0, 8)).toBe(false);
+    expect(validReach(62, 184, 0, 255)).toBe(true);
     expect(advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 255 }, null)).toBeNull();
-    const next = advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 4 }, null);
-    expect(next?.keeperChoice).toEqual({ lane: 0, reach: 4 } satisfies PreviewGuard);
+    const next = advancePreview(state, { type: 'guard', kick: 0, lane: 0, reach: 8 }, null);
+    expect(next?.keeperChoice).toEqual({ lane: 0, reach: 8 } satisfies PreviewGuard);
   });
-  it('caps goalkeeper specialists at four targets to balance their two-zone reach', () => {
-    expect(shootingRating(19465)).toBe(70);
+  it('uses the official shooting rating for 3, 7 and 8 scoring zones', () => {
+    expect(shootingRating(159)).toBe(58);
     expect(goalkeeperRating(19465)).toBe(95);
-    expect(scoringTargets(19465)).toHaveLength(4);
-    expect(scoringTargets(1100)).toHaveLength(8);
-    expect(scoringTargets(1)).toHaveLength(2);
+    expect(scoringTargets(159)).toHaveLength(3);
+    expect(scoringTargets(1460)).toHaveLength(7);
+    expect(scoringTargets(184)).toHaveLength(8);
+    expect(ratingTier(shootingRating(159))).toBe(2);
   });
-  it('prevents repeated players in regulation and resolves the wire limit', () => {
+  it('prevents repeated rating bands per role in regulation and resolves the wire limit', () => {
     let state = initialPreviewState();
-    const pairs = [[1100, 278], [154, 874], [129718, 1]];
-    for (let i = 0; i < 127; i++) {
-      const [a, b] = pairs[i] ?? [1100, 278];
-      state = pair(state, a, b); state = kick(state, false); state = kick(state, false);
-      if (i === 0) {
+    for (let round = 0; round < 127; round++) {
+      state = pair(state, round); state = kick(state, false); state = kick(state, false);
+      if (round === 0) {
         const prior = state;
-        const one = advancePreview(state, { type: 'pick', kick: 2, playerId: 1100 }, null);
+        const one = advancePreview(state, { type: 'pick', kick: 2, shooterId: 1100, keeperId: 1438 }, null);
         expect(one).toBeNull();
         expect(state).toBe(prior);
       }

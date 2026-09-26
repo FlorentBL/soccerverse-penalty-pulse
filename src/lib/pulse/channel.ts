@@ -1,11 +1,11 @@
 import type { ArcadeChannel, BoardMoveBytes, ParsedBoardState } from '@xayaarcade/sdk';
-import { adjacent, canReach, decodeState, encodeCommit, encodePick, encodePickCommit, encodePickReveal, encodeReveal, encodeShot } from './codec';
+import { decodeState, encodeCommit, encodePick, encodePickCommit, encodePickReveal, encodeReveal, encodeShot, goalkeeperRating, ratingTier, shootingRating, tierUsed, validReach } from './codec';
 
-export type PulseInput = { type: 'pick'; kick: number; playerId: number } |
+export type PulseInput = { type: 'pick'; kick: number; shooterId: number; keeperId: number } |
   { type: 'guard'; kick: number; lane: number; reach: number } |
   { type: 'shot'; kick: number; lane: number };
 interface GuardSecret { lane: number; reach: number; salt: number[] }
-interface PickSecret { playerId: number; salt: number[] }
+interface PickSecret { shooterId: number; keeperId: number; salt: number[] }
 function key(kind: string, channelId: bigint | null, seat: number, kick: number): string {
   return 'penaltypulse:' + kind + ':' + String(channelId) + ':' + seat + ':' + kick;
 }
@@ -19,7 +19,8 @@ function readGuard(channelId: bigint | null, seat: number, kick: number): GuardS
     if (!value) return null;
     const secret = JSON.parse(value) as GuardSecret;
     if (!Number.isInteger(secret.lane) || secret.lane < 0 || secret.lane > 8 ||
-        !Number.isInteger(secret.reach) || secret.reach !== 255 && !adjacent(secret.lane, secret.reach) ||
+        !Number.isInteger(secret.reach) || secret.reach !== 255 &&
+          (secret.reach < 0 || secret.reach > 8 || secret.reach === secret.lane) ||
         !validSalt(secret.salt)) return null;
     return secret;
   } catch { return null; }
@@ -29,8 +30,9 @@ function readPick(channelId: bigint | null, seat: number, kick: number): PickSec
     const value = localStorage.getItem(key('pick', channelId, seat, kick));
     if (!value) return null;
     const secret = JSON.parse(value) as PickSecret;
-    return Number.isInteger(secret.playerId) && secret.playerId > 0 &&
-      secret.playerId <= 523571 && validSalt(secret.salt) ? secret : null;
+    return Number.isInteger(secret.shooterId) && secret.shooterId > 0 && secret.shooterId <= 523571 &&
+      Number.isInteger(secret.keeperId) && secret.keeperId > 0 && secret.keeperId <= 523571 &&
+      secret.shooterId !== secret.keeperId && validSalt(secret.salt) ? secret : null;
   } catch { return null; }
 }
 export function keeperChoice(channelId: bigint | null, seat: number, kick: number): GuardSecret | null {
@@ -46,10 +48,11 @@ export class PulseChannel implements ArcadeChannel {
     const p = input as PulseInput;
     if ((p.type === 'guard' || p.type === 'shot' || p.type === 'pick') &&
         Number.isInteger(p.kick) && p.kick >= 0 && p.kick < 254 &&
-        (p.type === 'pick' ? Number.isInteger(p.playerId) && p.playerId > 0 && p.playerId <= 523571 :
+        (p.type === 'pick' ? Number.isInteger(p.shooterId) && p.shooterId > 0 && p.shooterId <= 523571 &&
+          Number.isInteger(p.keeperId) && p.keeperId > 0 && p.keeperId <= 523571 && p.shooterId !== p.keeperId :
           Number.isInteger(p.lane) && p.lane >= 0 && p.lane <= 8) &&
         (p.type !== 'guard' || Number.isInteger(p.reach) &&
-          (p.reach === 255 || adjacent(p.lane, p.reach))))
+          (p.reach === 255 || p.reach >= 0 && p.reach <= 8 && p.reach !== p.lane)))
       this.pending = p;
   }
   async maybeAutoMove(state: ParsedBoardState): Promise<BoardMoveBytes | null> {
@@ -58,30 +61,39 @@ export class PulseChannel implements ArcadeChannel {
     if (!game) return null;
     if (game.phase === 2) {
       const secret = readPick(this.channelId, this.seat, game.kick);
-      return secret ? encodePickReveal(secret.playerId, new Uint8Array(secret.salt)) : null;
+      return secret ? encodePickReveal(secret.shooterId, secret.keeperId, new Uint8Array(secret.salt)) : null;
     }
     if (game.phase === 5) {
       const secret = readGuard(this.channelId, this.seat, game.kick);
-      return secret ? encodeReveal(secret.lane, secret.reach, new Uint8Array(secret.salt)) : null;
+      return secret && validReach(game.pairKeepers[this.seat], game.pairShooters[1 - this.seat], secret.lane, secret.reach)
+        ? encodeReveal(secret.lane, secret.reach, new Uint8Array(secret.salt)) : null;
     }
     if (!this.pending || this.pending.kick !== game.kick) return null;
     const input = this.pending;
     this.pending = null;
     if (game.phase === 0 && this.seat === 0 && input.type === 'pick') {
+      if (ratingTier(shootingRating(input.shooterId)) < 0 || ratingTier(goalkeeperRating(input.keeperId)) < 0 ||
+          tierUsed(game.usedShooters[this.seat], input.shooterId, 'shoot') ||
+          tierUsed(game.usedKeepers[this.seat], input.keeperId, 'save')) return null;
       let secret = readPick(this.channelId, this.seat, game.kick);
       if (!secret) {
         const salt = new Uint8Array(32); crypto.getRandomValues(salt);
-        secret = { playerId: input.playerId, salt: [...salt] };
+        secret = { shooterId: input.shooterId, keeperId: input.keeperId, salt: [...salt] };
         try { localStorage.setItem(key('pick', this.channelId, this.seat, game.kick), JSON.stringify(secret)); }
         catch { return null; }
       }
-      return encodePickCommit(Math.floor(game.kick / 2), secret.playerId, new Uint8Array(secret.salt));
+      return encodePickCommit(Math.floor(game.kick / 2), secret.shooterId, secret.keeperId, new Uint8Array(secret.salt));
     }
-    if (game.phase === 1 && this.seat === 1 && input.type === 'pick') return encodePick(input.playerId);
+    if (game.phase === 1 && this.seat === 1 && input.type === 'pick') {
+      if (ratingTier(shootingRating(input.shooterId)) < 0 || ratingTier(goalkeeperRating(input.keeperId)) < 0 ||
+          tierUsed(game.usedShooters[this.seat], input.shooterId, 'shoot') ||
+          tierUsed(game.usedKeepers[this.seat], input.keeperId, 'save')) return null;
+      return encodePick(input.shooterId, input.keeperId);
+    }
     if (game.phase === 3 && input.type === 'guard') {
-      const shooter = game.pairPlayers[game.kick % 2];
-      const keeper = game.pairPlayers[1 - game.kick % 2];
-      if (canReach(keeper, shooter) ? !adjacent(input.lane, input.reach) : input.reach !== 255) return null;
+      const shooter = game.pairShooters[game.kick % 2];
+      const keeper = game.pairKeepers[1 - game.kick % 2];
+      if (!validReach(keeper, shooter, input.lane, input.reach)) return null;
       let secret = readGuard(this.channelId, this.seat, game.kick);
       if (!secret) {
         const salt = new Uint8Array(32); crypto.getRandomValues(salt);

@@ -28,15 +28,16 @@ describe('keeper commitment persistence', () => {
     const afterSecondPick = bytes(lines[3].split(' ')[1]);
     const channel = new PulseChannel(52n);
     channel.setPlayerIndex(0);
-    channel.setPendingInput({ type: 'pick', kick: 0, playerId: 1100 });
+    channel.setPendingInput({ type: 'pick', kick: 0, shooterId: 184, keeperId: 19465 });
     const committed = await channel.maybeAutoMove(state(initial, 0));
     expect(committed?.[0]).toBe(5);
-    channel.setPendingInput({ type: 'pick', kick: 0, playerId: 184 });
+    channel.setPendingInput({ type: 'pick', kick: 0, shooterId: 1460, keeperId: 1438 });
     expect(await channel.maybeAutoMove(state(initial, 0))).toEqual(committed);
     const reveal = await channel.maybeAutoMove(state(afterSecondPick, 0));
     expect(reveal?.[0]).toBe(6);
-    expect(new DataView(reveal!.buffer).getUint32(1, true)).toBe(1100);
-    expect(await encodePickCommit(0, 1100, reveal!.slice(5))).toEqual(committed);
+    expect(new DataView(reveal!.buffer).getUint32(1, true)).toBe(184);
+    expect(new DataView(reveal!.buffer).getUint32(5, true)).toBe(19465);
+    expect(await encodePickCommit(0, 184, 19465, reveal!.slice(9))).toEqual(committed);
   });
 
   it('uses the same secret after a retry and reveals the lane originally committed', async () => {
@@ -55,16 +56,16 @@ describe('keeper commitment persistence', () => {
     const afterShot = bytes(lines[6].split(' ')[1]);
     const channel = new PulseChannel(42n);
     channel.setPlayerIndex(1);
-    channel.setPendingInput({ type: 'guard', kick: 0, lane: 0, reach: 255 });
+    channel.setPendingInput({ type: 'guard', kick: 0, lane: 0, reach: 4 });
     const first = await channel.maybeAutoMove(state(afterPair, 1));
     expect(first?.length).toBe(33);
-    expect(keeperChoice(42n, 1, 0)).toMatchObject({ lane: 0, reach: 255 });
-    channel.setPendingInput({ type: 'guard', kick: 0, lane: 2, reach: 255 });
+    expect(keeperChoice(42n, 1, 0)).toMatchObject({ lane: 0, reach: 4 });
+    channel.setPendingInput({ type: 'guard', kick: 0, lane: 2, reach: 4 });
     const retry = await channel.maybeAutoMove(state(afterPair, 1));
     expect(retry).toEqual(first);
     const reveal = await channel.maybeAutoMove(state(afterShot, 1));
     expect(reveal?.[0]).toBe(3);
     expect(reveal?.[1]).toBe(0);
-    expect(reveal?.[2]).toBe(255);
+    expect(reveal?.[2]).toBe(4);
   });
 });
