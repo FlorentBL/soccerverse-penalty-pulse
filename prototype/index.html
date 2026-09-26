@@ -15,26 +15,28 @@
   <section><small id="round"></small><p id="status"></p><div id="pick"></div><button class="action" id="action"></button><p class="note" id="note">Three shots each. The striker picks a player, then the keeper secretly chooses one of nine spots. The striker aims last. Matching spots mean a save.</p></section></main>
 <div id="handoff"><div><h2 id="handoff-title"></h2><p>Pass the device to the next player.</p><button id="continue">Continue</button></div></div>
 <script>
-  const players=[{id:1100,name:'Erling Braut Haaland'},{id:278,name:'Kylian Mbappé Lottin'},{id:154,name:'Lionel Messi'},{id:874,name:'Cristiano Ronaldo'},{id:129718,name:'Jude Bellingham'},{id:1,name:'Roman Bürki'},{id:2,name:'Marwin Hitz'},{id:3,name:'Eric Dirk Oelschlägel'}];
+  const players=[{id:1100,name:'Erling Braut Haaland',rating:96},{id:278,name:'Kylian Mbappé Lottin',rating:95},{id:154,name:'Lionel Messi',rating:88},{id:874,name:'Cristiano Ronaldo',rating:88},{id:129718,name:'Jude Bellingham',rating:88},{id:1,name:'Roman Bürki',rating:51},{id:2,name:'Marwin Hitz',rating:57},{id:3,name:'Eric Dirk Oelschlägel',rating:50}];
   const columns=['LEFT','CENTRE','RIGHT'],rows=['HIGH','MID','LOW'],names=Array.from({length:9},(_,i)=>rows[Math.floor(i/3)]+' '+columns[i%3]),score=[0,0],used=[[],[]];let kick=0,phase='pick',guard=null,lane=null,player=null,last='';
-  const el=id=>document.getElementById(id),count=id=>3+2*(id%3),targets=id=>{const steps=[1,2,4,5,7,8],start=id%9,step=steps[Math.floor(id/9)%6];return Array.from({length:count(id)},(_,i)=>(start+i*step)%9)};
+  const el=id=>document.getElementById(id),count=id=>{const rating=players.find(p=>p.id===id).rating;return rating<55?2:rating<60?3:rating<65?4:rating<70?5:rating<80?6:rating<90?7:8},targets=id=>{const steps=[1,2,4,5,7,8],start=id%9,step=steps[Math.floor(id/9)%6];return Array.from({length:count(id)},(_,i)=>(start+i*step)%9)};
   const shooter=()=>kick%2,keeper=()=>1-shooter();
   function draw(){
-    el('score').textContent=score.join(' : ');el('round').textContent=kick<6?'KICK '+(kick+1)+' OF 6':'FULL TIME';
+    el('score').textContent=score.join(' : ');el('round').textContent=phase==='done'?'FULL TIME':kick<6?'KICK '+(kick+1)+' OF 6':'SUDDEN DEATH · ROUND '+(Math.floor((kick-6)/2)+1);
     el('goal').innerHTML='';names.forEach((name,i)=>{const b=document.createElement('button');b.textContent=String(i+1).padStart(2,'0');b.setAttribute('aria-label',name);b.className=((phase==='guard'&&guard===i||phase==='shot'&&lane===i)?'active ':'')+((phase==='pick'||phase==='guard'||phase==='shot')&&player&&targets(player.id).includes(i)?'safe':'');b.disabled=phase!=='guard'&&phase!=='shot';b.onclick=()=>{if(phase==='guard')guard=i;else lane=i;draw()};el('goal').append(b)});
     el('pick').innerHTML='';
-    if(phase==='pick')players.forEach(p=>{const b=document.createElement('button');b.className='player'+(player?.id===p.id?' active':'');b.textContent=p.name+' · '+count(p.id)+'/9';b.disabled=used[shooter()].includes(p.id);b.onclick=()=>{player=p;draw()};el('pick').append(b)});
+    if(phase==='pick')players.forEach(p=>{const b=document.createElement('button');b.className='player'+(player?.id===p.id?' active':'');b.textContent=p.name+' · SHOOT '+p.rating+' · '+count(p.id)+'/9';b.disabled=kick<6&&used[shooter()].includes(p.id);b.onclick=()=>{player=p;draw()};el('pick').append(b)});
     if(phase==='done'){el('status').textContent=score[0]===score[1]?'DRAW': 'PLAYER '+(score[0]>score[1]?1:2)+' WINS';el('action').textContent='PLAY AGAIN';el('action').disabled=false;return}
     el('status').textContent=phase==='pick'?'Player '+(shooter()+1)+': choose your Soccerverse striker.':phase==='guard'?'Player '+(keeper()+1)+': choose where your keeper dives.':'Player '+(shooter()+1)+': aim your shot.';
     el('action').textContent=phase==='pick'?'CONFIRM PLAYER':phase==='guard'?'LOCK KEEPER DIVE':'TAKE SHOT';
     el('action').disabled=phase==='pick'?player===null:phase==='guard'?guard===null:lane===null;
-    el('note').textContent=player?'Pulse precision for '+player.name+': '+count(player.id)+'/9 reliable targets (Arcade trait).':last||'Nine targets. The stronger the Arcade shooter, the more reliable targets.';
+    el('note').textContent=player?'Soccerverse shooting '+player.rating+'/100: '+count(player.id)+'/9 reliable targets.':last||'Official Soccerverse shooting ratings decide how many targets are reliable.';
   }
   el('action').onclick=()=>{if(phase==='done'){score.fill(0);used[0]=[];used[1]=[];kick=0;phase='pick';guard=lane=player=null;last='';draw();return}
     if(phase==='pick'){phase='guard';el('handoff-title').textContent='Player '+(keeper()+1)+', your keeper';el('handoff').classList.add('show');draw();return}
     if(phase==='guard'){phase='shot';el('handoff-title').textContent='Player '+(shooter()+1)+', your shot';el('handoff').classList.add('show');draw();return}
     const result=lane===guard?'SAVED':targets(player.id).includes(lane)?'GOAL':'WIDE';
-    if(result==='GOAL')score[shooter()]++;used[shooter()].push(player.id);last='Last kick: '+result+'.';kick++;guard=lane=player=null;phase=kick===6?'done':'pick';
+    if(result==='GOAL')score[shooter()]++;if(kick<6)used[shooter()].push(player.id);last='Last kick: '+result+'.';kick++;guard=lane=player=null;
+    const rem0=Math.max(0,3-Math.ceil(kick/2)),rem1=Math.max(0,3-Math.floor(kick/2));
+    phase=kick<6&&((score[0]>score[1]+rem1)||(score[1]>score[0]+rem0))||kick>=6&&kick%2===0&&score[0]!==score[1]||kick===254?'done':'pick';
     if(phase!=='done'){el('handoff-title').textContent='Player '+(shooter()+1)+', pick a striker';el('handoff').classList.add('show')}draw();
   };
   el('continue').onclick=()=>el('handoff').classList.remove('show');draw();

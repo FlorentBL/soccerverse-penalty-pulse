@@ -5,7 +5,7 @@ import { useChannelStore } from '@xayaarcade/sdk';
 import { useLanguage } from './LanguageProvider';
 import { submitPulseInput } from '@/hooks/use-pulse-input';
 import type { PulseState } from '@/lib/pulse/codec';
-import { scoringTargetCount, scoringTargets } from '@/lib/pulse/codec';
+import { scoringTargetCount, scoringTargets, shootingRating } from '@/lib/pulse/codec';
 import { featuredPlayers, findPlayerName } from '@/lib/pulse/players';
 import { keeperChoice, type PulseInput } from '@/lib/pulse/channel';
 import KeeperFigure from './KeeperFigure';
@@ -37,7 +37,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const picking = myTurn && game?.phase === 0;
   const defending = myTurn && game?.phase === 1;
   const shooting = myTurn && game?.phase === 2;
-  const used = game?.used[localPlayerIndex] ?? [];
+  const used = game && game.kick < 6 ? game.used[localPlayerIndex] : [];
 
   useEffect(() => {
     setGuard(null); setLockedGuard(null); setAim(null); setPlayerId(null); setPlayerName('');
@@ -63,6 +63,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
 
   async function selectPlayer(id: number) {
     if (used.includes(id)) { setError(t.cannotReuse); return; }
+    if (shootingRating(id) === null) { setError(t.playerMissing); return; }
     setError('');
     try {
       const name = await findPlayerName(id);
@@ -96,6 +97,12 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
   const phaseLabel = preview && (picking || defending || shooting) ? `P${localPlayerIndex + 1} / ${roleLabel}` : roleLabel;
   const lastKeeper = game && game.kick > 0 && (finished || game.phase === 0 && playerId === null) && game.lastGuard <= 8 ? game.lastGuard : null;
   const keeperSpot = defending ? guard ?? 4 : lastKeeper;
+  const extra = (game?.kick ?? 0) >= 6;
+  const progress = extra ? (game?.kick ?? 6) - 6 : (game?.kick ?? 0);
+  const progressTotal = extra ? 2 : 6;
+  const progressDone = extra ? finished && progress % 2 === 0 ? 2 : progress % 2 : progress;
+  const extraRound = Math.floor(progress / 2) + (finished && progress % 2 === 0 && progress > 0 ? 0 : 1);
+  const regulationKick = finished ? Math.max(1, Math.min(game?.kick ?? 0, 6)) : Math.min((game?.kick ?? 0) + 1, 6);
 
   return <main className="pulse-root">
     <header className="pulse-top">
@@ -105,8 +112,8 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
     </header>
     <div className="pulse-score">
       <div className={'pulse-score-side ' + (!preview && localPlayerIndex === 0 ? 'mine' : '')}><small>{preview ? 'P1' : localPlayerIndex === 0 ? t.you : t.rival}</small><strong>{game?.goals[0] ?? 0}</strong></div>
-      <div className="pulse-round"><span>{t.round} {Math.min((game?.kick ?? 0) + 1, 6)} <em>{t.of} 6</em></span>
-        <div className="pulse-dots">{Array.from({ length: 6 }, (_, i) => <i key={i} className={i < (game?.kick ?? 0) ? 'done' : i === game?.kick ? 'current' : ''} />)}</div>
+      <div className="pulse-round"><span>{extra ? t.suddenDeath : t.round + ' ' + regulationKick} <em>{extra ? t.extraRound + ' ' + extraRound : t.of + ' 6'}</em></span>
+        <div className="pulse-dots">{Array.from({ length: progressTotal }, (_, i) => <i key={i} className={i < progressDone ? 'done' : !finished && i === progressDone ? 'current' : ''} />)}</div>
       </div>
       <div className={'pulse-score-side pulse-score-away ' + (!preview && localPlayerIndex === 1 ? 'mine' : '')}><small>{preview ? 'P2' : localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{game?.goals[1] ?? 0}</strong></div>
     </div>
@@ -150,10 +157,10 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
           <button type="button" onClick={() => void selectPlayer(Number(lookup))}>{t.search}</button></div>
         <div className="pulse-featured"><small>{t.featured}</small><div>{featuredPlayers.map((p, index) =>
           <button type="button" key={p.id} disabled={used.includes(p.id)} className={playerId === p.id ? 'active' : ''}
-            onClick={() => void selectPlayer(p.id)}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{p.name}<b>{scoringTargetCount(p.id)}/9</b></button>)}</div></div>
+            onClick={() => void selectPlayer(p.id)}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{p.name}<b>{shootingRating(p.id)} · {scoringTargetCount(p.id)}/9</b></button>)}</div></div>
       </div>}
       {displayId !== null && (picking || defending || shooting) && <div className="pulse-player"><div className="pulse-player-monogram" aria-hidden="true">SV</div><div className="pulse-player-info"><strong>{playerName || '#' + displayId}</strong><span>#{displayId}</span>
-        <small>{t.pulsePrecision}: <b>{allowed.length}/9</b> <em>· {t.arcadeTrait}</em></small>
+        <small>{t.shootingRating}: <b>{shootingRating(displayId)}/100</b> <em>· {t.pulsePrecision}: {allowed.length}/9</em></small>
         <div className="pulse-skill-bars" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i} className={i < allowed.length ? 'active' : ''} />)}</div></div></div>}
       {(picking || defending || shooting) && <button type="button" className="pulse-action" disabled={busy || picking && playerId === null || defending && guard === null || shooting && aim === null}
         onClick={() => void send()}>{picking ? t.confirmPlayer : defending ? t.dive : t.shoot}<span aria-hidden="true">↗</span></button>}

@@ -1,8 +1,18 @@
-# Soccerverse player snapshot
+# Soccerverse player and shooting snapshots
 
 Source: https://downloads.soccerverse.com/svpack/packv2/default.json
 Fetched: 2026-09-25
 Source SHA-256: `d8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e`
 Player count: 179100; maximum ID: 523571.
 
-The official datapack supplies IDs and display names, not playable statistics or ownership. `player-ids.bin` and `rules/pulse/player_bits.inc` are the same membership bitset. `public/players/*.json` are display-name shards. The 1,985 records with missing first and last names display as `Soccerverse player #ID`. Pulse precision is intentionally Arcade-specific, derived deterministically from ID, and is not the Soccerverse `rating_shooting` available through the [official GSP API](https://soccerverse.com/developers/gsp-json-rpc). A future use of that live rating requires pinning a complete, versioned snapshot into the rules blob; no rating snapshot is present here. Regenerate names with `python3 scripts/generate-soccerverse-snapshot.py /path/to/default.json`; the script rejects any source with a different SHA-256.
+The [official datapack](https://soccerverse.com/developers/datapack-and-assets) supplies IDs and display names, not playable statistics or ownership. `player-ids.bin` and `rules/pulse/player_bits.inc` are the same membership bitset. `public/players/*.json` are display-name shards. The 1,985 records with missing first and last names display as `Soccerverse player #ID`. Regenerate names with `python3 scripts/generate-soccerverse-snapshot.py /path/to/default.json`; the script rejects any source with a different SHA-256.
+
+## Shooting ratings
+
+- Source: [official Soccerverse MCP](https://soccerverse.com/developers/soccerverse-mcp), public `search_players` tool at `https://mcp.soccerverse.io/mcp`, which exposes the Datacentre `/players` records.
+- Fetched: 2026-09-26, approximately 08:09–08:12 UTC. This is an API snapshot across 1,791 batches, **not** a single chain-height snapshot. Ratings can change in Soccerverse after collection; Arcade matches always use these pinned bytes.
+- Selected IDs: exactly the 179,100 IDs in the pinned datapack, queried in batches of 100. All 179,100 returned an integer `rating_shooting` between 0 and 100. No datapack player was missing a rating at collection time.
+- `data/player-shooting.bin`: 523,572 bytes, indexed by player ID; `255` in unused ID slots. SHA-256: `fe0eb9c810a27f17f6ad605ee29669449774bc2a55603e0cfaa6c1e1065abfd6`.
+- C++ and browser copies, `rules/pulse/player_shooting.inc` and `src/lib/pulse/shooting-data.ts`, are generated with `python3 scripts/generate-shooting-assets.py` from that binary. Regenerate the snapshot with `python3 scripts/fetch-soccerverse-shooting.py`; the script checks IDs, pagination and values and caches batches under `/tmp/pulse-soccerverse-ratings` to resume a long fetch. Delete that cache first to obtain new live ratings; changing the snapshot changes the WASM consensus hash.
+
+Arcade maps the official rating to reliable goal zones: below 55 → 2, 55–59 → 3, 60–64 → 4, 65–69 → 5, 70–79 → 6, 80–89 → 7, 90–100 → 8. At least one of the nine zones is always unreliable. These thresholds and the exact ID-based arrangement of the zones are **Arcade rules**, not Soccerverse statistics. Ownership is neither checked nor required. No live Soccerverse request is made during a match.

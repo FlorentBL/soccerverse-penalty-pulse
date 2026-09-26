@@ -22,7 +22,7 @@ describe('Penalty Pulse touch flow', () => {
     render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={1} /></LanguageProvider>);
     expect(screen.getByText(/striker cannot see it before shooting/i)).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Erling Braut Haaland')).toBeInTheDocument());
-    expect(screen.getByText('7/9')).toBeInTheDocument();
+    expect(screen.getByText('96/100')).toBeInTheDocument();
     expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '4');
     fireEvent.click(screen.getByRole('button', { name: 'HIGH LEFT' }));
     expect(screen.getByTestId('pulse-keeper')).toHaveAttribute('data-lane', '0');
@@ -62,5 +62,38 @@ describe('Penalty Pulse touch flow', () => {
     expect(screen.getByTestId('pulse-keeper').querySelector('.pulse-keeper-catch')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Erling Braut Haaland/ }));
     await waitFor(() => expect(screen.queryByTestId('pulse-keeper')).not.toBeInTheDocument());
+  });
+  it('shows sudden death and lets a striker reuse a regulation player', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ '1100': 'Erling Braut Haaland' }) })));
+    useChannelStore.getState().updateFromBoardState({
+      ...board(0, 0), kick: 6, turnCount: 24,
+      used: [[1100, 154, 129718], [278, 874, 1]],
+      lastResult: 2, lastGuard: 4, lastShot: 4, lastPlayer: 1,
+    });
+    render(<LanguageProvider><InputHarness /><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
+    expect(screen.getByText('SUDDEN DEATH')).toBeInTheDocument();
+    const haaland = screen.getByRole('button', { name: /Erling Braut Haaland/ });
+    expect(haaland).toBeEnabled();
+    fireEvent.click(haaland);
+    await waitFor(() => expect(screen.getByText('#1100')).toBeInTheDocument());
+  });
+  it('keeps the completed sudden-death pair on its actual round', () => {
+    useChannelStore.getState().updateFromBoardState({
+      ...board(4, 255), kick: 8, turnCount: 32, goals: [1, 0], winner: 0,
+      used: [[1100, 154, 129718], [278, 874, 1]],
+      lastResult: 2, lastGuard: 4, lastShot: 4, lastPlayer: 278,
+    });
+    render(<LanguageProvider><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
+    expect(screen.getByText('SUDDEN DEATH')).toBeInTheDocument();
+    expect(screen.getByText('ROUND 1')).toBeInTheDocument();
+  });
+  it('keeps an early finish on the deciding regulation kick', () => {
+    useChannelStore.getState().updateFromBoardState({
+      ...board(4, 255), kick: 4, turnCount: 16, goals: [2, 0], winner: 0,
+      used: [[1100, 154, 0], [278, 874, 0]],
+      lastResult: 2, lastGuard: 4, lastShot: 4, lastPlayer: 874,
+    });
+    render(<LanguageProvider><PulseBoard localPlayerIndex={0} /></LanguageProvider>);
+    expect(screen.getByText('KICK 4')).toBeInTheDocument();
   });
 });

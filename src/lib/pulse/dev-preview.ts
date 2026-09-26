@@ -1,5 +1,5 @@
 import type { PulseInput } from './channel';
-import { scoringTargets, type PulseState } from './codec';
+import { scoringTargetCount, scoringTargets, type PulseState } from './codec';
 
 /** Local UI rehearsal only. Real matches are judged by rules.wasm through the SDK. */
 export function initialPreviewState(): PulseState {
@@ -10,14 +10,25 @@ export function initialPreviewState(): PulseState {
   };
 }
 
+function scoreWinner(kick: number, goals: [number, number]): number {
+  if (kick < 6) {
+    if (goals[0] > goals[1] + 3 - Math.floor(kick / 2)) return 0;
+    if (goals[1] > goals[0] + 3 - Math.ceil(kick / 2)) return 1;
+    return -1;
+  }
+  if (kick % 2) return -1;
+  if (goals[0] !== goals[1]) return goals[0] > goals[1] ? 0 : 1;
+  return kick === 254 ? 0 : -1;
+}
+
 export function advancePreview(
   state: PulseState, input: PulseInput, keeperLane: number | null,
 ): { state: PulseState; keeperLane: number | null } | null {
-  if (state.phase === 4 || input.kick !== state.kick) return null;
+  if (state.phase === 4 || state.kick >= 254 || input.kick !== state.kick) return null;
   const shooter = state.kick % 2;
   if (state.phase === 0 && input.type === 'pick') {
-    if (!Number.isInteger(input.playerId) || input.playerId < 1 ||
-        state.used[shooter].includes(input.playerId)) return null;
+    if (!Number.isInteger(input.playerId) || scoringTargetCount(input.playerId) === 0 ||
+        state.kick < 6 && state.used[shooter].includes(input.playerId)) return null;
     return {
       state: { ...state, phase: 1, turn: 1 - shooter, pendingPlayer: input.playerId, turnCount: state.turnCount + 1 },
       keeperLane: null,
@@ -36,13 +47,14 @@ export function advancePreview(
     const goals: [number, number] = [...state.goals];
     if (result === 1) goals[shooter]++;
     const used: [number[], number[]] = [state.used[0].slice(), state.used[1].slice()];
-    used[shooter][Math.floor(state.kick / 2)] = state.pendingPlayer;
+    if (state.kick < 6) used[shooter][Math.floor(state.kick / 2)] = state.pendingPlayer;
     const kick = state.kick + 1;
-    const finished = kick === 6;
+    const winner = scoreWinner(kick, goals);
+    const finished = winner !== -1;
     return {
       state: {
         ...state, phase: finished ? 4 : 0, turn: finished ? 255 : kick % 2,
-        kick, goals, winner: finished ? goals[0] === goals[1] ? -2 : goals[0] > goals[1] ? 0 : 1 : -1,
+        kick, goals, winner,
         turnCount: state.turnCount + 2, pendingPlayer: 0, pendingLane: 255,
         lastResult: result, used, lastPlayer: state.pendingPlayer,
         lastShot: input.lane, lastGuard: keeperLane,

@@ -16,18 +16,19 @@ template<std::size_t N> void step(State& s, const std::array<std::uint8_t, N>& m
   const auto b = encode(s); hex(b.data(), b.size()); std::cout << "\n";
 }
 int main() {
-  constexpr std::uint32_t ids[] = {1100,278,154,874,129718,1};
+  constexpr std::uint32_t ids[] = {1100,278,154,874,129718,1,1100,278};
   for (int mode = 0; mode < 2; ++mode) {
     State s; initial(2, nullptr, 0, s);
     std::cout << "mode " << mode << "\n";
     auto initialBytes = encode(s); hex(initialBytes.data(), initialBytes.size()); std::cout << "\n";
-    for (int k = 0; k < 6; ++k) {
+    for (int k = 0; k < (mode == 0 ? 4 : 8); ++k) {
       std::array<std::uint8_t, 5> pick = {4, std::uint8_t(ids[k]), std::uint8_t(ids[k] >> 8),
         std::uint8_t(ids[k] >> 16), std::uint8_t(ids[k] >> 24)};
       step(s, pick);
       std::uint8_t shotLane = 0;
       while (!isScoringTarget(ids[k], shotLane)) ++shotLane;
-      const auto guard = std::uint8_t(mode == 1 || k % 2 ? shotLane : (shotLane + 1) % 9);
+      const auto goal = mode == 0 ? k % 2 == 0 : k == 6;
+      const auto guard = std::uint8_t(goal ? (shotLane + 1) % 9 : shotLane);
       std::array<std::uint8_t, 32> salt{};
       for (int i = 0; i < 32; ++i) salt[i] = std::uint8_t(k * 11 + i);
       std::uint8_t pre[34] = {std::uint8_t(k), guard};

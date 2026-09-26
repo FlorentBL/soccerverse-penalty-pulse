@@ -29,6 +29,7 @@ struct State {
 };
 
 bool playerExists(std::uint32_t id);
+std::uint8_t shootingRating(std::uint32_t id); // 255 means unavailable.
 std::uint8_t scoringTargetCount(std::uint32_t id);
 bool isScoringTarget(std::uint32_t id, std::uint8_t target);
 bool initial(std::uint8_t participants, const std::uint8_t* cfg, std::size_t cfgLength, State& out);

@@ -114,7 +114,7 @@
   .pulse-score { min-height: 76px; }.pulse-score-side { flex-direction: column; gap: 2px; align-items: flex-start; }.pulse-score-away { align-items: flex-end; }
   .pulse-score-side strong { font-size: 44px; }.pulse-score-side small { font-size: 9px; min-width: 0; }.pulse-round { font-size: 10px; }.pulse-round em { font-size: 9px; }.pulse-dots i { width: 10px; }
   .pulse-arena { flex: none; min-height: 290px; padding: 69px 17px 0; background-position: center 56%; }.pulse-goal { height: 156px; aspect-ratio: auto; border-width: 7px; }.pulse-goal-head { font-size: 8px; letter-spacing: .13em; }.pulse-zone-target { width: 29px; height: 29px; font-size: 17px; }.pulse-keeper { width: clamp(48px, 14vw, 62px); }.pulse-spot { width: 62px; height: 62px; bottom: 4%; }.pulse-ball { width: 26px; height: 26px; }.pulse-ball::after { width: 10px; height: 10px; top: 7px; left: 7px; }
-  .pulse-console { flex: none; overflow: visible; padding: 18px; gap: 15px; }.pulse-step p { font-size: 17px; }.pulse-featured > div { max-height: none; }.pulse-featured button { min-height: 39px; }.pulse-root footer { text-align: center; padding: 2px 0 12px; }
+  .pulse-console { flex: none; overflow: visible; padding: 18px; gap: 15px; }.pulse-step p { font-size: 17px; }.pulse-featured > div { max-height: none; }.pulse-featured button { min-height: 39px; }.pulse-action { position: static; margin-top: 0; }.pulse-root footer { text-align: center; padding: 2px 0 12px; }
   .pulse-root:has(.pulse-picker) .pulse-arena { min-height: 257px; padding-top: 57px; }
   .pulse-root:has(.pulse-picker) .pulse-goal { height: 143px; }
   .pulse-root:has(.pulse-picker) .pulse-spot, .pulse-root:has(.pulse-picker) .pulse-pitch-arc { display: none; }

@@ -1,3 +1,6 @@
+import { shootingRating } from './shooting-data';
+export { shootingRating } from './shooting-data';
+
 export interface PulseState {
   participants: number;
   phase: 0 | 1 | 2 | 3 | 4;
@@ -31,7 +34,16 @@ export function decodeState(bytes: Uint8Array, participants: number): PulseState
   };
 }
 
-export function scoringTargetCount(id: number): number { return 3 + 2 * (id % 3); }
+export function scoringTargetCount(id: number): number {
+  const rating = shootingRating(id);
+  if (rating === null) return 0;
+  if (rating < 55) return 2;
+  if (rating < 60) return 3;
+  if (rating < 65) return 4;
+  if (rating < 70) return 5;
+  if (rating < 80) return 6;
+  return rating < 90 ? 7 : 8;
+}
 export function scoringTargets(id: number): number[] {
   const steps = [1, 2, 4, 5, 7, 8];
   const start = id % 9;

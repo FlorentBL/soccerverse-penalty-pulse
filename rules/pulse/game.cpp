@@ -7,6 +7,9 @@ namespace {
 constexpr std::uint8_t playerBits[] = {
 #include "player_bits.inc"
 };
+constexpr std::uint8_t playerShooting[] = {
+#include "player_shooting.inc"
+};
 std::uint32_t read32(const std::uint8_t* p) {
   return std::uint32_t(p[0]) | (std::uint32_t(p[1]) << 8) |
          (std::uint32_t(p[2]) << 16) | (std::uint32_t(p[3]) << 24);
@@ -18,12 +21,37 @@ bool allZero(const std::array<std::uint8_t, 32>& b) {
   for (auto x : b) if (x) return false;
   return true;
 }
+int scoreWinner(std::uint8_t kick, const std::uint8_t goals[2]) {
+  if (kick < 6) {
+    const int remaining0 = 3 - (kick + 1) / 2;
+    const int remaining1 = 3 - kick / 2;
+    if (goals[0] > goals[1] + remaining1) return 0;
+    if (goals[1] > goals[0] + remaining0) return 1;
+    return -1;
+  }
+  if (kick % 2) return -1; // Both sides get the same number of sudden-death kicks.
+  if (goals[0] != goals[1]) return goals[0] > goals[1] ? 0 : 1;
+  return kick == 254 ? 0 : -1; // Wire-format limit; first shooter wins after 124 tied extra pairs.
+}
 } // namespace
 
 bool playerExists(std::uint32_t id) {
-  return id && id / 8 < sizeof(playerBits) && (playerBits[id / 8] & (1u << (id % 8)));
+  return id && id < sizeof(playerShooting) && playerShooting[id] != 255 &&
+    id / 8 < sizeof(playerBits) && (playerBits[id / 8] & (1u << (id % 8)));
 }
-std::uint8_t scoringTargetCount(std::uint32_t id) { return std::uint8_t(3 + 2 * (id % 3)); }
+std::uint8_t shootingRating(std::uint32_t id) {
+  return playerExists(id) ? playerShooting[id] : 255;
+}
+std::uint8_t scoringTargetCount(std::uint32_t id) {
+  const auto rating = shootingRating(id);
+  if (rating == 255) return 0;
+  if (rating < 55) return 2;
+  if (rating < 60) return 3;
+  if (rating < 65) return 4;
+  if (rating < 70) return 5;
+  if (rating < 80) return 6;
+  return rating < 90 ? 7 : 8;
+}
 bool isScoringTarget(std::uint32_t id, std::uint8_t target) {
   constexpr std::uint8_t steps[6] = {1, 2, 4, 5, 7, 8};
   const auto start = id % 9;
@@ -76,20 +104,20 @@ bool decode(const std::uint8_t* b, std::size_t n, std::uint8_t participants, Sta
 
 bool valid(const State& s) {
   if (s.participants < 1 || s.participants > 2 || s.phase > FINISHED ||
-      s.kick > 6 || s.turnCount > 25 || s.goals[0] > 3 || s.goals[1] > 3 ||
+      s.kick > 254 || s.turnCount > 1020 ||
       s.goals[0] > (s.kick + 1) / 2 || s.goals[1] > s.kick / 2 ||
       s.lastResult > MISSED) return false;
   if (s.participants == 1) {
     if (s.phase != PICK || s.turn != 255 || s.kick || s.turnCount ||
         s.winner != -1 || !allZero(s.commitment)) return false;
   } else if (s.phase == FINISHED) {
-    if (s.turn != 255 || s.winner < -2 || s.winner > 1 || s.winner == -1) return false;
-    if (s.kick == 6 && (s.turnCount != 24 ||
-        s.winner != (s.goals[0] == s.goals[1] ? -2 : (s.goals[0] > s.goals[1] ? 0 : 1)))) return false;
-    if (s.kick < 6 && (s.winner == -2 || s.turnCount < 4 * s.kick + 1 ||
-        s.turnCount > 4 * s.kick + 4)) return false;
+    if (s.turn != 255 || s.winner < 0 || s.winner > 1) return false;
+    if (s.turnCount == 4 * s.kick) {
+      if (s.kick == 0 || s.winner != scoreWinner(s.kick, s.goals)) return false;
+    } else if (s.turnCount < 4 * s.kick + 1 ||
+               s.turnCount > 4 * s.kick + 4 || scoreWinner(s.kick, s.goals) != -1) return false;
   } else {
-    if (s.kick >= 6 || s.winner != -1 ||
+    if (scoreWinner(s.kick, s.goals) != -1 || s.winner != -1 ||
         s.turn != ((s.phase == PICK || s.phase == SHOOT) ? s.kick % 2 : 1 - s.kick % 2) ||
         s.turnCount != 4 * s.kick + s.phase) return false;
   }
@@ -108,7 +136,8 @@ bool valid(const State& s) {
     if ((s.phase == COMMIT ? !allZero(s.commitment) : allZero(s.commitment)) ||
         !playerExists(s.pendingPlayer) ||
         (s.phase == REVEAL ? s.pendingLane > 8 : s.pendingLane != 255)) return false;
-    for (int i = 0; i < 3; ++i) if (s.used[s.kick % 2][i] == s.pendingPlayer) return false;
+    if (s.kick < 6)
+      for (int i = 0; i < 3; ++i) if (s.used[s.kick % 2][i] == s.pendingPlayer) return false;
   }
   if (s.kick == 0 && (s.lastResult != NONE || s.lastPlayer || s.lastShot != 255 || s.lastGuard != 255)) return false;
   if (s.kick > 0 && (s.lastResult == NONE || !playerExists(s.lastPlayer) || s.lastShot > 8 || s.lastGuard > 8)) return false;
@@ -124,7 +153,8 @@ bool apply(State& s, const std::uint8_t* m, std::size_t n) {
     if (n != 5 || m[0] != 4) return false;
     const auto id = read32(m + 1);
     if (!playerExists(id)) return false;
-    for (int i = 0; i < 3; ++i) if (s.used[s.kick % 2][i] == id) return false;
+    if (s.kick < 6)
+      for (int i = 0; i < 3; ++i) if (s.used[s.kick % 2][i] == id) return false;
     next.pendingPlayer = id;
     next.phase = COMMIT;
     next.turn = 1 - s.kick % 2;
@@ -152,14 +182,14 @@ bool apply(State& s, const std::uint8_t* m, std::size_t n) {
     next.lastResult = m[1] == s.pendingLane ? SAVED :
       (isScoringTarget(s.pendingPlayer, s.pendingLane) ? GOAL : MISSED);
     if (next.lastResult == GOAL) ++next.goals[seat];
-    next.used[seat][s.kick / 2] = s.pendingPlayer;
+    if (s.kick < 6) next.used[seat][s.kick / 2] = s.pendingPlayer;
     next.commitment.fill(0);
     next.pendingPlayer = 0; next.pendingLane = 255;
     ++next.kick;
-    if (next.kick == 6) {
+    const int winner = scoreWinner(next.kick, next.goals);
+    if (winner != -1) {
       next.phase = FINISHED; next.turn = 255;
-      next.winner = next.goals[0] == next.goals[1] ? -2 :
-        (next.goals[0] > next.goals[1] ? 0 : 1);
+      next.winner = winner;
     } else {
       next.phase = PICK;
       next.turn = next.kick % 2;

@@ -31,7 +31,7 @@ export class PulseChannel implements ArcadeChannel {
     if (!input || typeof input !== 'object') return;
     const p = input as PulseInput;
     if ((p.type === 'guard' || p.type === 'shot' || p.type === 'pick') &&
-        Number.isInteger(p.kick) && p.kick >= 0 && p.kick < 6 &&
+        Number.isInteger(p.kick) && p.kick >= 0 && p.kick < 254 &&
         (p.type === 'pick' ? Number.isInteger(p.playerId) && p.playerId > 0 && p.playerId <= 523571 :
           Number.isInteger(p.lane) && p.lane >= 0 && p.lane <= 8))
       this.pending = p;

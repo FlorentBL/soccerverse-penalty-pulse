@@ -35,6 +35,23 @@ std::array<std::uint8_t, 34> reveal(std::uint8_t lane, const std::array<std::uin
   std::memcpy(out.data() + 2, secret.data(), 32);
   return out;
 }
+void play(State& s, std::uint32_t id, bool goal, std::uint8_t seed) {
+  const auto k = s.kick;
+  const auto lane = firstTarget(id);
+  const auto guard = std::uint8_t(goal ? (lane + 1) % 9 : lane);
+  const auto secret = salt(seed);
+  const auto p = pick(id); const auto c = commit(k, guard, secret);
+  const auto m = shot(lane); const auto r = reveal(guard, secret);
+  assert(apply(s, p.data(), p.size()));
+  assert(apply(s, c.data(), c.size()));
+  assert(apply(s, m.data(), m.size()));
+  assert(apply(s, r.data(), r.size()));
+  assert(s.kick == k + 1 && s.turnCount == 4 * s.kick && valid(s));
+  const auto encoded = encode(s);
+  State restored;
+  assert(decode(encoded.data(), encoded.size(), 2, restored));
+  assert(valid(restored) && encode(restored) == encoded);
+}
 int main() {
   State s;
   assert(initial(2, nullptr, 0, s) && valid(s));
@@ -48,36 +65,34 @@ int main() {
     for (std::uint8_t target = 0; target < 9; ++target) count += isScoringTarget(id, target);
     assert(count == scoringTargetCount(id));
   }
-  assert(scoringTargetCount(3) == 3 && scoringTargetCount(1) == 5 && scoringTargetCount(2) == 7);
+  assert(shootingRating(1100) == 96 && shootingRating(278) == 95);
+  assert(shootingRating(1) == 51 && scoringTargetCount(1) == 2);
+  assert(scoringTargetCount(1100) == 8 && scoringTargetCount(278) == 8);
+  assert(shootingRating(154) == 88 && scoringTargetCount(154) == 7);
   const std::uint32_t players[6] = {1100, 278, 154, 874, 129718, 1};
-  for (int kick = 0; kick < 6; ++kick) {
-    const auto secret = salt(std::uint8_t(7 + kick));
-    const auto id = players[kick];
-    const auto lane = firstTarget(id);
-    const auto keeper = std::uint8_t(kick % 2 ? lane : (lane + 1) % 9);
-    const auto c = commit(kick, keeper, secret);
-    assert(whoseTurn(s) == kick % 2);
-    assert(!apply(s, pick(0).data(), 5));
-    const auto p = pick(id);
-    assert(apply(s, p.data(), p.size()));
-    assert(whoseTurn(s) == 1 - kick % 2);
-    assert(!apply(s, c.data(), 32));
-    assert(apply(s, c.data(), c.size()));
-    const auto m = shot(lane);
-    assert(!apply(s, m.data(), 1));
-    assert(!apply(s, shot(9).data(), 2));
-    assert(apply(s, m.data(), m.size()));
-    assert(!apply(s, reveal((keeper + 1) % 9, secret).data(), 34));
-    const auto r = reveal(keeper, secret);
-    assert(apply(s, r.data(), r.size()));
-    assert(s.kick == kick + 1 && s.turnCount == (kick + 1) * 4 && valid(s));
-    const auto bytes = encode(s);
-    State restored;
-    assert(decode(bytes.data(), bytes.size(), 2, restored));
-    assert(valid(restored) && encode(restored) == bytes);
-  }
-  assert(s.phase == FINISHED && s.winner == 0 && s.goals[0] == 3 && s.goals[1] == 0);
+  assert(!apply(s, pick(0).data(), 5));
+  for (int kick = 0; kick < 4; ++kick) play(s, players[kick], kick % 2 == 0, std::uint8_t(kick + 7));
+  assert(s.phase == FINISHED && s.winner == 0 && s.goals[0] == 2 && s.goals[1] == 0);
   assert(whoseTurn(s) == -1 && !apply(s, shot(0).data(), 2));
+  State sudden;
+  assert(initial(2, nullptr, 0, sudden));
+  for (int k = 0; k < 6; ++k) play(sudden, players[k], false, std::uint8_t(k + 21));
+  assert(sudden.phase == PICK && sudden.kick == 6 && sudden.goals[0] == 0 && sudden.goals[1] == 0);
+  play(sudden, 1100, true, 40); // First striker can be reused in sudden death.
+  assert(sudden.phase == PICK && sudden.kick == 7 && sudden.winner == -1);
+  play(sudden, 278, false, 41);
+  assert(sudden.phase == FINISHED && sudden.kick == 8 && sudden.winner == 0);
+  State cap;
+  assert(initial(2, nullptr, 0, cap));
+  for (int k = 0; k < 254; ++k)
+    play(cap, k < 6 ? players[k] : (k % 2 ? 278u : 1100u), false, std::uint8_t(k));
+  assert(cap.phase == FINISHED && cap.kick == 254 && cap.winner == 0);
+  State regulation;
+  assert(initial(2, nullptr, 0, regulation));
+  play(regulation, 1100, false, 50);
+  play(regulation, 278, false, 51);
+  assert(!apply(regulation, pick(1100).data(), 5));
+  assert(!apply(regulation, shot(9).data(), 2));
   State miss;
   assert(initial(2, nullptr, 0, miss));
   const auto p = pick(3);
@@ -89,6 +104,7 @@ int main() {
   assert(apply(miss, c.data(), c.size()));
   const auto m = shot(unsafe);
   assert(apply(miss, m.data(), m.size()));
+  assert(!apply(miss, reveal(std::uint8_t((unsafe + 2) % 9), secret).data(), 34));
   const auto r = reveal(std::uint8_t((unsafe + 1) % 9), secret);
   assert(apply(miss, r.data(), r.size()) && miss.lastResult == MISSED && miss.goals[0] == 0);
   State t;
