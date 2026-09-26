@@ -16,7 +16,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     button: 'RULES', title: 'HOW TO PLAY', close: 'Close rules',
     intro: 'A quick two-player penalty duel: three regulation kicks each, then sudden death if tied.',
     steps: [
-      { number: '01', title: 'Choose your duo', body: 'On your turn to shoot, choose one of your three FC shooters. Your opponent then chooses one of their three GK keepers. They place the keeper secretly, and you aim the shot. On the next penalty, you swap roles. Across regulation, use each 90+, 75–89 and 55–74 choice once in each role.' },
+      { number: '01', title: 'Choose your duo', body: 'On your turn to shoot, choose one of your three FC shooters. Your opponent then chooses one of their three GK keepers. They place the keeper secretly, and you aim the shot. On the next penalty, you swap roles. Each player has separate picks: P1 using Ronaldo does not spend P2’s Ronaldo. Across regulation, each player uses the 90+, 75–89 and 55–74 bands once in each role.' },
       { number: '02', title: 'Read the goal', body: 'There are nine numbered zones. Green zones are where this shooter can score. Both players see the exact same green zones before the keeper chooses a position.' },
       { number: '03', title: 'Dive, then shoot', body: 'The defender secretly places the keeper. The shooter then chooses one green zone without seeing that position. Dark zones cannot be selected. A covered shot is saved; an uncovered shot is a goal.' },
       { number: '04', title: 'Win the shootout', body: 'Players alternate kicks. The match ends early if the trailing player cannot catch up. A tie after three kicks each goes to paired sudden death; players and bands can then be reused.' },
@@ -30,7 +30,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     button: 'RÈGLES', title: 'COMMENT JOUER', close: 'Fermer les règles',
     intro: 'Un duel de penalties rapide à deux : trois tirs réglementaires chacun, puis la mort subite en cas d’égalité.',
     steps: [
-      { number: '01', title: 'Choisissez votre duo', body: 'Quand c’est à vous de tirer, choisissez un des trois tireurs FC. Votre adversaire choisit ensuite un des trois gardiens GK, puis place secrètement ce gardien. Vous visez le tir. Au penalty suivant, les rôles s’inversent. Pendant les tirs réglementaires, utilisez une fois chaque niveau 90+, 75–89 et 55–74 dans chaque rôle.' },
+      { number: '01', title: 'Choisissez votre duo', body: 'Quand c’est à vous de tirer, choisissez un des trois tireurs FC. Votre adversaire choisit ensuite un des trois gardiens GK, puis le place secrètement. Vous visez le tir. Au penalty suivant, les rôles s’inversent. P1 et P2 ont des choix séparés : Ronaldo utilisé par P1 reste disponible pour P2. Chacun doit utiliser les niveaux 90+, 75–89 et 55–74 une fois dans chaque rôle.' },
       { number: '02', title: 'Lisez la cage', body: 'La cage comporte neuf cases numérotées. Les cases vertes sont celles où ce tireur peut marquer. Les deux joueurs voient exactement les mêmes cases avant que le gardien se place.' },
       { number: '03', title: 'Plongez, puis tirez', body: 'Le défenseur place secrètement son gardien. Le tireur choisit une case verte sans voir sa position. Les cases sombres ne peuvent pas être choisies. Un tir couvert est arrêté ; sinon, c’est un but.' },
       { number: '04', title: 'Gagnez la séance', body: 'Les joueurs tirent à tour de rôle. La partie finit plus tôt si le retard ne peut plus être rattrapé. Après trois tirs chacun, une égalité mène à une mort subite par paires ; les joueurs et niveaux peuvent alors être réutilisés.' },
@@ -44,7 +44,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     button: 'REGOLE', title: 'COME SI GIOCA', close: 'Chiudi le regole',
     intro: 'Una rapida sfida ai rigori: tre tiri regolamentari a testa, poi l’oltranza in caso di pareggio.',
     steps: [
-      { number: '01', title: 'Scegli la coppia', body: 'Quando tocca a te tirare, scegli uno dei tre tiratori FC. Il rivale sceglie uno dei tre portieri GK e lo posiziona in segreto. Poi miri il tiro. Al rigore seguente i ruoli si scambiano. Durante i tiri regolamentari usa una volta ogni fascia 90+, 75–89 e 55–74 per ciascun ruolo.' },
+      { number: '01', title: 'Scegli la coppia', body: 'Quando tocca a te tirare, scegli uno dei tre tiratori FC. Il rivale sceglie uno dei tre portieri GK e lo posiziona in segreto. Poi miri il tiro. Al rigore seguente i ruoli si scambiano. P1 e P2 hanno scelte separate: Ronaldo usato da P1 resta disponibile per P2. Ognuno deve usare una volta le fasce 90+, 75–89 e 55–74 per ciascun ruolo.' },
       { number: '02', title: 'Leggi la porta', body: 'La porta ha nove zone numerate. Le zone verdi sono quelle in cui il tiratore può segnare. Entrambi vedono le stesse zone prima che il portiere scelga la posizione.' },
       { number: '03', title: 'Tuffati, poi tira', body: 'Il difensore posiziona il portiere in segreto. Il tiratore sceglie una zona verde senza vedere la sua posizione. Le zone scure non si possono scegliere. Un tiro coperto è parato; altrimenti è gol.' },
       { number: '04', title: 'Vinci la sfida', body: 'I giocatori tirano a turno. La partita termina prima se chi perde non può più recuperare. Dopo tre tiri a testa, il pareggio porta all’oltranza a coppie; giocatori e fasce possono essere riutilizzati.' },
@@ -58,7 +58,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     button: 'REGLAS', title: 'CÓMO JUGAR', close: 'Cerrar reglas',
     intro: 'Un duelo rápido de penaltis: tres tiros reglamentarios por persona y muerte súbita si hay empate.',
     steps: [
-      { number: '01', title: 'Elige tu pareja', body: 'Cuando te toca tirar, elige uno de los tres lanzadores FC. Tu rival elige uno de los tres porteros GK y lo coloca en secreto. Luego apuntas el tiro. En el siguiente penalti intercambiáis roles. Durante la tanda reglamentaria usa una vez cada nivel 90+, 75–89 y 55–74 por rol.' },
+      { number: '01', title: 'Elige tu pareja', body: 'Cuando te toca tirar, elige uno de los tres lanzadores FC. Tu rival elige uno de los tres porteros GK y lo coloca en secreto. Luego apuntas el tiro. En el siguiente penalti intercambiáis roles. P1 y P2 tienen elecciones separadas: Ronaldo usado por P1 sigue disponible para P2. Cada uno debe usar una vez los niveles 90+, 75–89 y 55–74 por rol.' },
       { number: '02', title: 'Lee la portería', body: 'La portería tiene nueve zonas numeradas. Las zonas verdes son aquellas donde el lanzador puede marcar. Ambos ven las mismas zonas antes de que el portero elija su posición.' },
       { number: '03', title: 'Salta y dispara', body: 'El defensor coloca al portero en secreto. El lanzador elige una zona verde sin ver su posición. Las zonas oscuras no se pueden elegir. Un tiro cubierto se para; si queda libre, es gol.' },
       { number: '04', title: 'Gana la tanda', body: 'Los jugadores tiran por turnos. El partido termina antes si quien pierde ya no puede alcanzar al rival. Tras tres tiros cada uno, el empate lleva a muerte súbita por parejas; se pueden reutilizar jugadores y niveles.' },
@@ -72,7 +72,7 @@ export const rulesCopy: Record<Locale, RulesCopy> = {
     button: 'REGRAS', title: 'COMO JOGAR', close: 'Fechar regras',
     intro: 'Um duelo rápido de penáltis: três remates regulamentares por jogador, seguidos de morte súbita em caso de empate.',
     steps: [
-      { number: '01', title: 'Escolha a dupla', body: 'Quando for a sua vez de rematar, escolha um dos três marcadores FC. O adversário escolhe um dos três guarda-redes GK e posiciona-o em segredo. Depois aponta o remate. No penálti seguinte, trocam de papéis. Na fase regulamentar use uma vez cada nível 90+, 75–89 e 55–74 por papel.' },
+      { number: '01', title: 'Escolha a dupla', body: 'Quando for a sua vez de rematar, escolha um dos três marcadores FC. O adversário escolhe um dos três guarda-redes GK e posiciona-o em segredo. Depois aponta o remate. No penálti seguinte, trocam de papéis. P1 e P2 têm escolhas separadas: Ronaldo usado por P1 continua disponível para P2. Cada um deve usar uma vez os níveis 90+, 75–89 e 55–74 por papel.' },
       { number: '02', title: 'Leia a baliza', body: 'A baliza tem nove zonas numeradas. As zonas verdes são as que permitem marcar. Ambos veem exatamente as mesmas zonas antes de o guarda-redes escolher a posição.' },
       { number: '03', title: 'Mergulhe e remate', body: 'O defensor posiciona o guarda-redes em segredo. O marcador escolhe uma zona verde sem ver a posição. As zonas escuras não podem ser escolhidas. Um remate coberto é defendido; se ficar livre, é golo.' },
       { number: '04', title: 'Vença a disputa', body: 'Os jogadores rematam à vez. O jogo acaba cedo se quem perde já não puder recuperar. Após três remates cada, um empate leva a morte súbita por pares; jogadores e níveis podem ser reutilizados.' },

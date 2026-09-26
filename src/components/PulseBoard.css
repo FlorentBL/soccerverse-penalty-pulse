@@ -32,6 +32,8 @@
 .pulse-score-away { flex-direction: row-reverse; }
 .pulse-score-side small { display: block; min-width: 50px; color: #91b6a3; font-size: 11px; font-weight: 900; letter-spacing: .19em; text-transform: uppercase; }
 .pulse-score-side.mine small { color: var(--lime); }
+.pulse-score-side.pulse-score-active small { color: var(--lime); }
+.pulse-score-side.pulse-score-active strong { text-shadow: 0 0 24px #d9fb7459, 0 5px 20px #0008; }
 .pulse-score-side strong { color: #f7f9ed; font-family: Impact, 'Arial Narrow', sans-serif; font-size: clamp(44px, 6vw, 72px); font-weight: 900; font-style: italic; line-height: .95; text-shadow: 0 5px 20px #0008; }
 .pulse-round { text-align: center; text-transform: uppercase; color: #f3f7e9; font-size: 12px; font-weight: 900; letter-spacing: .17em; }
 .pulse-round em { color: #96b4a5; font-size: 10px; font-style: normal; }
@@ -176,6 +178,9 @@
 .pulse-flow span b { color: #c9ee86; font: italic 16px Impact, 'Arial Narrow', sans-serif; }
 .pulse-flow span.active { border-color: #dcff88; color: #f7ffe2; background: #416b39; box-shadow: 0 0 14px #d9fb742e; }
 .pulse-flow span.done { color: #9fbea4; }
+.pulse-seat-notice { display: flex; align-items: baseline; gap: 11px; padding: 9px 11px; border: 1px solid #d9fb747d; border-left: 3px solid var(--lime); background: #224936; color: #e6f5d6; font-size: 11px; line-height: 1.3; }
+.pulse-seat-notice strong { flex: none; color: var(--lime); font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: .06em; }
+.pulse-seat-notice span { font-weight: 750; }
 .pulse-opponent-pick { margin: 0; padding: 9px; border: 1px solid #d9fb7488; color: #e8f9d9; background: #244632; font-size: 12px; line-height: 1.25; }
 .pulse-opponent-pick strong { color: #d9fb74; }
 .pulse-role-plan { padding: 10px; border: 1px solid #b1d6837a; background: linear-gradient(105deg, #254836c9, #102d25d9); }
@@ -253,6 +258,7 @@
   .pulse-console { flex: none; overflow: visible; padding: 13px; gap: 11px; }
   .pulse-step-index { font-size: 34px; }
   .pulse-step p { font-size: 15px; line-height: 1.3; }
+  .pulse-seat-notice { flex-direction: column; gap: 3px; }
   .pulse-featured > div { max-height: none; }
   .pulse-featured button { min-height: 43px; }
   .pulse-action { position: fixed; bottom: max(8px, env(safe-area-inset-bottom)); left: 96px; z-index: 90; width: calc(100vw - 106px); min-height: 55px; margin: 0; padding: 8px 12px; border: 1px solid #e7ffb2; font-size: 11px!important; letter-spacing: .06em; box-shadow: 0 9px 28px #00150dd9; }

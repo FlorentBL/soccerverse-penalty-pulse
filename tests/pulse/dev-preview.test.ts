@@ -43,6 +43,16 @@ describe('wallet-free local preview', () => {
     state = kick(state, false);
     expect(state).toMatchObject({ phase: 0, turn: 0, kick: 2, goals: [1, 0], turnCount: 10 });
   });
+  it('lets P2 choose Ronaldo after P1 used him, then blocks P1 from reusing that band', () => {
+    const p1 = advancePreview(initialPreviewState(), { type: 'shooter', kick: 0, playerId: 874 }, null)!;
+    const p2Keeper = advancePreview(p1.state, { type: 'keeper', kick: 0, playerId: 62 }, null)!;
+    const afterP1 = kick(p2Keeper.state, true);
+    const p2 = advancePreview(afterP1, { type: 'shooter', kick: 1, playerId: 874 }, null);
+    expect(p2?.state.usedShooters).toEqual([[874, 0, 0], [874, 0, 0]]);
+    const p1Keeper = advancePreview(p2!.state, { type: 'keeper', kick: 1, playerId: 19465 }, null)!;
+    const afterP2 = kick(p1Keeper.state, false);
+    expect(advancePreview(afterP2, { type: 'shooter', kick: 2, playerId: 874 }, null)).toBeNull();
+  });
   it('ends early after two unanswered goals', () => {
     let state = initialPreviewState();
     for (let kickNo = 0; kickNo < 4; kickNo++) state = kick(select(state), kickNo % 2 === 0);

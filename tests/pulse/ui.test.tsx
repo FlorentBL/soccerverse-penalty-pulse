@@ -4,6 +4,7 @@ import { useChannelStore } from '@xayaarcade/sdk';
 import { LanguageProvider } from '@/components/LanguageProvider';
 import PulseBoard from '@/components/PulseBoard';
 import { usePulseInput } from '@/hooks/use-pulse-input';
+import type { PulseState } from '@/lib/pulse/codec';
 
 const submit = vi.fn(async (_input: unknown) => true);
 function InputHarness() { usePulseInput(submit); return null; }
@@ -51,6 +52,20 @@ describe('Penalty Pulse one-penalty touch flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /David Raya Martin/i }));
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Choose goalkeeper/i })));
     expect(submit).toHaveBeenCalledWith({ type: 'keeper', kick: 0, playerId: 19465 });
+  });
+  it('shows whose hotseat turn it is and explains each player has separate picks', () => {
+    const p2State = { ...board(0, 1), kick: 1, turnCount: 5,
+      usedShooters: [[874, 0, 0], [0, 0, 0]] } as PulseState;
+    const p2 = render(<LanguageProvider><PulseBoard localPlayerIndex={1} previewState={p2State} /></LanguageProvider>);
+    expect(screen.getByText('P2 plays now')).toBeInTheDocument();
+    expect(screen.getByText(/A player used by P1 is still available to P2/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cristiano Ronaldo/i })).toBeEnabled();
+    p2.unmount();
+    const p1State = { ...board(0, 0), kick: 2, turnCount: 10,
+      usedShooters: [[874, 0, 0], [874, 0, 0]] } as PulseState;
+    render(<LanguageProvider><PulseBoard localPlayerIndex={0} previewState={p1State} /></LanguageProvider>);
+    expect(screen.getByText('P1 plays now')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cristiano Ronaldo/i })).toBeDisabled();
   });
   it('shows the defender the three reliable zones of a limited shooter', () => {
     useChannelStore.getState().updateFromBoardState({ ...board(2, 1), pairShooters: [1917, 0], pairKeepers: [0, 19465] });

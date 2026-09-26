@@ -203,12 +203,12 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
       <span className="pulse-free"><i aria-hidden="true" />{preview ? t.localDemo : t.playFree}</span>
     </header>
     <div className="pulse-score">
-      <div className={'pulse-score-side ' + (!preview && localPlayerIndex === 0 ? 'mine' : '')}><small>{preview ? 'P1' : localPlayerIndex === 0 ? t.you : t.rival}</small><strong>{shownGoals[0]}</strong></div>
+      <div className={'pulse-score-side ' + (!preview && localPlayerIndex === 0 ? 'mine' : '') + (preview && localPlayerIndex === 0 && !finished && !replay && !showOutcome ? ' pulse-score-active' : '')}><small>{preview ? 'P1' : localPlayerIndex === 0 ? t.you : t.rival}</small><strong>{shownGoals[0]}</strong></div>
       <div className="pulse-round"><span>{extra ? t.suddenDeath : t.round + ' ' + regulationKick} <em>{extra ? t.extraRound + ' ' + extraRound : t.of + ' 6'}</em></span>
         <div className="pulse-dots">{Array.from({ length: progressTotal }, (_, i) => <i key={i} className={i < progressDone ? 'done' : !finished && i === progressDone ? 'current' : ''} />)}</div>
         <button type="button" className="pulse-rules-trigger" onClick={() => setRulesOpen(true)}>{rulesCopy[locale].button} <span aria-hidden="true">↗</span></button>
       </div>
-      <div className={'pulse-score-side pulse-score-away ' + (!preview && localPlayerIndex === 1 ? 'mine' : '')}><small>{preview ? 'P2' : localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{shownGoals[1]}</strong></div>
+      <div className={'pulse-score-side pulse-score-away ' + (!preview && localPlayerIndex === 1 ? 'mine' : '') + (preview && localPlayerIndex === 1 && !finished && !replay && !showOutcome ? ' pulse-score-active' : '')}><small>{preview ? 'P2' : localPlayerIndex === 1 ? t.you : t.rival}</small><strong>{shownGoals[1]}</strong></div>
     </div>
     {showOutcome && <section className={'pulse-outcome pulse-outcome-' + game.lastResult} role="status" aria-live="assertive">
       <div><small>{t.penaltyResult}</small><strong>{result}</strong><span className="pulse-outcome-matchup">
@@ -268,6 +268,7 @@ export default function PulseBoard({ localPlayerIndex, previewState, onPreviewIn
           <span key={index} className={game?.phase === index ? 'active' : game && game.phase > index ? 'done' : ''}
             aria-current={game?.phase === index ? 'step' : undefined}><b>{index + 1}</b>{label}</span>)}
       </div>}
+      {preview && picking && <div className="pulse-seat-notice"><strong>{t.previewTurn.replace('{seat}', String(localPlayerIndex + 1))}</strong><span>{t.separateRosters}</span></div>}
       {picking && <div className="pulse-picker">
         <p className="pulse-tier-rule">{t.tierRule}</p>
         {pickingKeeper && <p className="pulse-opponent-pick">{t.theirShooter}: <strong>{featuredPlayers.find(p => p.id === strikerId)?.name}</strong> · {scoringTargetCount(strikerId)}/9</p>}
