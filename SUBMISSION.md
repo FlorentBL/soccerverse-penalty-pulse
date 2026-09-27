@@ -23,13 +23,14 @@ Public listing request: [xaya/arcade-submissions#1](https://github.com/xaya/arca
 
 - Local repository: `/Users/fbl/Documents/soccerverse-penalty-pulse`
 - Remote Git URL: `https://github.com/FlorentBL/soccerverse-penalty-pulse` (public; reviewers can read the exact commit)
-- Tested game commit SHA: `2634193f8e7804b146486a2aa6a3f4478a2ce149`
+- Original public listing commit SHA: `2634193f8e7804b146486a2aa6a3f4478a2ce149`; the locally tested SDK 0.20.7 update is `d4328d1`.
 - WASM path: `blob/rules.wasm`
 - WASM SHA-256: `7ba32b8d8251fa8f7a3579854574093c2b2271fe9ea1f046eb707db70873acc3`
 - State encoding: version 6, fixed 159 bytes
 - Bundle path: `dist/bundle.tar.gz` (generated locally, ignored by Git)
-- Attached playground bundle SHA-256: `188a7dd0b78077adf7421346fcca901eda95805e2b094181dc7d33bea00793fa` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host supplies runtime relay, GSP and Polygon endpoints; the local export intentionally uses blank endpoint variables.
+- Previously attached playground bundle SHA-256: `188a7dd0b78077adf7421346fcca901eda95805e2b094181dc7d33bea00793fa` (`FRAME_ANCESTORS=https://test-arcade.xaya.io`, `NEXT_PUBLIC_GAME_ID=xarc`). The games-host supplies runtime relay, GSP and Polygon endpoints; the local export intentionally uses blank endpoint variables.
 - Playground update: `20260927-064233-penalty-pulse-cb2a`; [status](https://test-arcade.xaya.io/api/submissions/20260927-064233-penalty-pulse-cb2a), [play](https://test-arcade.xaya.io/play/penalty-pulse). The disposable playground auto-accepted the five-card bundle: reclaim, preflight, slots, bake, onchain, register, content and verify all passed. This is not a public Arcade submission.
+- SDK 0.20.7 update: source commit `d4328d1`, bundle SHA-256 `b387fbf472fd6b67240bf81467cc3977a931489288d22adc4a80e9bb2b8b73c2`, submission `20260927-203552-penalty-pulse-f189`. Preflight, rules activation, bundle registration and content-row creation passed. Final verification failed because `/play/penalty-pulse` returned 404 without the game embed. The prior playground update above is historical; the current 0.20.7 bundle has not been served or tested in a live match. The new resubmit token is saved locally outside Git.
 - Source datapack SHA-256: `d8cc1fe15c726c7360e259783a9d9a4ba0b9069096f50ecdfa4b434402b6ff3e`
 - Soccerverse shooting table SHA-256: `fe0eb9c810a27f17f6ad605ee29669449774bc2a55603e0cfaa6c1e1065abfd6`
 - Soccerverse goalkeeper table SHA-256: `e615569b6699fdc1dbdb3bfd0bf0b0ec1f3b514ee006e3e71fb2a9e849dc60f2`
