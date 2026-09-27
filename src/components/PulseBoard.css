@@ -262,7 +262,8 @@
   .pulse-featured > div { max-height: none; }
   .pulse-featured button { min-height: 43px; }
   .pulse-action { position: fixed; bottom: max(8px, env(safe-area-inset-bottom)); left: 96px; z-index: 90; width: calc(100vw - 106px); min-height: 55px; margin: 0; padding: 8px 12px; border: 1px solid #e7ffb2; font-size: 11px!important; letter-spacing: .06em; box-shadow: 0 9px 28px #00150dd9; }
-  .pulse-root:has(.pulse-picker) .pulse-action { position: static; width: 100%; margin-top: 8px; }
+  .pulse-root:has(.pulse-picker) .pulse-action { position: fixed; left: 8px; width: calc(100vw - 16px); margin: 0; }
+  .pulse-root:has(.pulse-picker) .pulse-action:disabled { position: static; width: 100%; margin-top: 8px; }
   .pulse-root footer { display: none; }
   .pulse-root:has(.pulse-picker):not(.pulse-replaying):not(.pulse-resolving):not(.pulse-result-open) .pulse-arena { display: none; }
   .pulse-outcome { flex: none; flex-direction: column; align-items: stretch; gap: 7px; min-height: 0; padding: 9px 12px; }
