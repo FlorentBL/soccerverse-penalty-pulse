@@ -29,7 +29,7 @@
     "@bufbuild/protobuf": "^2.11.0",
     "@tanstack/react-query": "^5.90.20",
     "@wagmi/core": "^3.6.1",
-    "@xayaarcade/sdk": "file:vendor/xayaarcade-sdk-0.20.5.tgz",
+    "@xayaarcade/sdk": "file:vendor/xayaarcade-sdk-0.20.7.tgz",
     "connectkit": "^1.9.1",
     "next": "^16.3.3",
     "react": "^19.2.4",

@@ -38,8 +38,9 @@ operator reviews and registers accepted games.
 **Submit a tested source commit through a GitHub issue.** Open the Game submission form at
 https://github.com/xaya/arcade-submissions/issues/new?template=game-submission.yml.
 It asks for the repository, full commit covering frontend and rules, compiled WASM path and
-SHA-256, game/registration details, test results and a wagering request. Keep the rules source,
-compiled WASM, its hash and reproducible build instructions in the same game repository.
+SHA-256, game/registration details, test results and a wagering request with the Polygon address
+your game's fee is paid to. Keep the rules source, compiled WASM, its hash and reproducible build
+instructions in the same game repository.
 The form is defined in `arcade-submissions/.github/ISSUE_TEMPLATE/game-submission.yml`.
 
 The operator rebuilds the frontend for the target arcade, verifies the WASM hash, reviews the
@@ -955,7 +956,7 @@ on the arcade: apart from the pre-flight it runs, the not-proven list below appl
 
 **Or run the pipeline on your own stack.** Nothing is uploaded: in your clone of
 `xaya-stack`, add your fork as a submodule at `services/games/<dir>` and append one row to the games
-table (`scripts/games-table.sh`: `slug|title|seats|gameType|<dir>|cfgSuffix|policy`; append only, because
+table (`scripts/games-table.sh`: `slug|title|seats|gameType|<dir>|cfgSuffix|fee`; append only, because
 position assigns games-host slots). That row is where the four registration values live on your
 plane (§3 step 0): the seat range and the suffix in it are what your blob is registered under, so
 copy both from `blob/MANIFEST.md`. Then `./stack up playground`, or, on a plane that is already up,
@@ -969,10 +970,11 @@ at the commit your clone records with no local edits or the bring-up refuses it 
 `scripts/plane-lib.sh`): a change to your game is a commit in your fork and `./stack bump <slug>` in
 your stack clone, never a hand-edited checkout.
 
-The optional `policy` column is empty for wagering support or `free` for free-only
-intake (`game_free_only` in `scripts/games-table.sh`). A free-only row omits the
-wager address from its games-host configuration and registers with the free-only
-contract policy; check `pg_wager_row` and `register_row` before adding your game.
+The last column, `fee`, is who is paid the game's wagering fee: `platform` (your stack contract's own
+`feeRecipient`), an 0x address, or `free` for free-only intake (`game_fee` and `game_free_only` in
+`scripts/games-table.sh`). A free-only row is never registered on the contract, omits the wager
+address from its games-host configuration, and registers its consensus row free-only; check
+`pg_wager_row` and `register_row` before adding your game.
 
 **One more file, because the shell frames only what its catalogue lists.** The shell bakes rows for
 the first-party games alone, so write yours once as `content/games/<slug>.json` in your stack clone,
@@ -1073,7 +1075,7 @@ This is the single not-proven list. There is no second one.
    Your own plane registers every row of its table on the ArcadeWager
    it deployed on the fork and its games-host row with that address (`pg_wager_row` in
    `xaya-stack/scripts/plane-up.sh`, `register_row` in `scripts/register-rows.sh`), so your game
-   can take stakes there in fork-minted WCHI unless its policy is free-only. Whether it takes real ones on the arcade is an
+   can take stakes there in fork-minted WCHI unless its fee column is `free`. Whether it takes real ones on the arcade is an
    operator switch, not something this run decides. See this skill's `WAGERING.md`.
 7. **Not the games-host or GSP version the arcade runs.** Your plane runs the pins your clone records
    (`git submodule status`) and the public arcade runs its own. The `arcade:*` wire is frozen and
@@ -1171,7 +1173,10 @@ Use the Game submission form linked in §1. Include:
 - Proposed slug, game type (`GAME_KEY`) and `cfgSuffix` in hex or `none`.
 - Build, rules, frontend and deterministic replay results, including tested player counts,
   devices and any checks you could not run.
-- Whether you want WCHI wagering. Free play is required; wagering needs separate approval.
+- Whether you want WCHI wagering. Free play is required; wagering needs separate approval. A
+  wagering request names the Polygon address your game's match fee is paid to; you will be asked
+  to show it is yours. You can move it later from that address, and so can the arcade's operator,
+  for a lost key or a delisting.
 
 These are the fields in `arcade-submissions/.github/ISSUE_TEMPLATE/game-submission.yml`.
 The public instructions are https://arcade.xaya.io/docs/submitting. Submitters need a GitHub

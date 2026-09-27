@@ -24,8 +24,10 @@ lobby logic of your own; the SDK's lobby already carries the stake-tier UI behin
 (`wagerConfigured` in `sdk/src/lib/wager/wager-config.ts`). Enabling it is three OPERATOR actions, and the chain fails
 closed if any one is missing:
 
-1. `registerGame(gameType, freeOnly, minPlayers, maxPlayers)` on the deployed `ArcadeWager` contract
-   (`registerGame` in `arcade-wager/src/ArcadeWager.sol`);
+1. `registerGame(gameType, freeOnly, minPlayers, maxPlayers, feeTo)` on the deployed `ArcadeWager`
+   contract (`registerGame` in `arcade-wager/src/ArcadeWager.sol`), where `feeTo` is who is paid the
+   game's fee: its builder for a game taken in, the platform for its own. The recipient can move it
+   with `setGameFeeRecipient`, and so can the contract's owner;
 2. the GSP registration move's wagering block;
 3. `--wager-address 0x…` on the bundle registration, which points the row's `--game-type` at the
    contract (`parseTypeFlags` in `games-host/src/register.ts`), and re-registering a wagered game
@@ -48,12 +50,13 @@ timeout: roughly ten minutes, five minutes and thirty minutes at Polygon's block
 Your blob must be able to answer `arcade_resolve_timeout` sensibly at *that* cadence; the much
 shorter windows a fork-testing deployment runs are not what a real player experiences.
 
-**The contract is ArcadeWager v2 or v3, and from SDK 0.16.0 the client speaks nothing older than v2.** This is a
+**The contract is ArcadeWager v2, v3 or v4, and from SDK 0.16.0 the client speaks nothing older than v2.** This is a
 plane property rather than anything you write, but it decides whether a bundle works at all, so know
 which side of it you are on. The v2 contract put the **payout amount** into the replay key, made a
 join name the queue group it consents to settle, and let anyone remove a seat whose player name has
-moved away. The SDK mirrors all three, and `checkWagerContract` accepts **versions 2 and 3**, each
-by exact value (v3, accepted from SDK 0.20.5, keeps v2's interface and only refuses more): a v1
+moved away. The SDK mirrors all three, and `checkWagerContract` accepts **versions 2, 3 and 4**, each
+by exact value (v3, accepted from SDK 0.20.5, keeps v2's interface and only refuses more; v4, from
+0.20.6, keeps v3's lobby interface and pays each game's fee to that game's own recipient): a v1
 deployment fails the gate outright, because its four-field key would answer "unpaid" for every row
 the package asks about. So: **games must be rebuilt against the redeployed contract, and a build
 carrying the old client against the new address (or the reverse) reads the payment queue wrongly and
@@ -121,10 +124,10 @@ one-time bootstrap fee, and up to **three** paid matches can be in flight at tha
 simultaneously: depth does not sit at 0 while one is playing. A live combo is deepened **only** by
 the `seed` admin move (`{"cmd":{"seed":{t,n,addr,burn,fee}}}`, authored as the contract-owned `g/`
 game name), never by another `reg`, so on the Arcade an operator re-seed *does* exist. And an
-abandoned paid match **returns its group**: the abandon reaper pushes one operator group per reaped
-channel, and a front-matched paid start that cannot open a channel does so immediately. An abandoned
-in-flight paid match therefore no longer kills the tier: it costs one unit of concurrency until the
-channel is reaped, then heals.
+abandoned paid match **returns its group**: the abandon reaper puts one group back per reaped
+channel, payable to that match's own players, and a front-matched paid start that cannot open a
+channel does so immediately. An abandoned in-flight paid match therefore no longer kills the tier:
+it costs one unit of concurrency until the channel is reaped, then heals.
 
 Five ways depth is lost, all of which your implementation must answer:
 

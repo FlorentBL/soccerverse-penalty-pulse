@@ -5,7 +5,7 @@ description: "Build multiplayer Xaya game-channel games with signed off-chain mo
 
 # Building channel games on Xaya
 
-> **This corpus describes `@xayaarcade/sdk` 0.20.5.** Check the vendored
+> **This corpus describes `@xayaarcade/sdk` 0.20.7.** Check the vendored
 > `vendor/PLATFORM-COMMIT` and `npm run sdk:freshness` against the platform checkout
 > before upgrading. The SDK's `CHANGELOG.md` owns migration details. Remote tags
 > may omit releases; the platform's `sdk/package.json` is the version authority.

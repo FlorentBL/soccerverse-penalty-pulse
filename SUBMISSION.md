@@ -35,7 +35,7 @@ Public listing request: [xaya/arcade-submissions#1](https://github.com/xaya/arca
 - Soccerverse goalkeeper table SHA-256: `e615569b6699fdc1dbdb3bfd0bf0b0ec1f3b514ee006e3e71fb2a9e849dc60f2`
 - Soccerverse primary FC bitset SHA-256: `6c11108dc5e6cc56e4f7250e271e42f8fda2d31f5ff260328ab629ccd54ec90d`
 - Soccerverse primary GK bitset SHA-256: `723ca7fcd919ce383a6d5762981413a90e693c60dab5c7e20543e0569ee72c8c`
-- SDK: vendored `@xayaarcade/sdk` 0.20.5; version checked against the local platform example snapshot, release commit provenance still needs a real platform Git checkout.
+- SDK: vendored `@xayaarcade/sdk` 0.20.7; archive SHA-256 and installed version checked against the new local platform example snapshot. Release commit provenance still needs a real platform Git checkout.
 
 ## Locally verified
 

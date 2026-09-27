@@ -49,10 +49,10 @@ FRAME_ANCESTORS=https://test-arcade.xaya.io NEXT_PUBLIC_GAME_ID=xarc bash script
 
 The SDK supplies the lobby, matchmaking agreement, channel and signed moves. `xarc` is the playground move namespace documented in the official skill; another target Arcade may use a different namespace. The static export writes `dist/bundle.tar.gz` and a SHA-256 sidecar. Data provenance is in [data/SOURCE.md](data/SOURCE.md), ABI values in [blob/MANIFEST.md](blob/MANIFEST.md), and the candidate submission in [SUBMISSION.md](SUBMISSION.md).
 
-Free play is the only requested mode. WCHI stakes are a separate future operator discussion; no configurable creator fee on the GSP is assumed. The game is attached to the [disposable XAYA playground](https://test-arcade.xaya.io/play/penalty-pulse) for testing. A [public listing request](https://github.com/xaya/arcade-submissions/issues/1) has been filed; XAYA review is pending. The source repository is public. A complete live two-account match on the current bundle is still needed and is disclosed in the request.
+Free play is the only requested mode. WCHI stakes are a separate future operator discussion. The SDK 0.20.7 supports the wager contract V4, but this game does not request wagering or implement payments. The game was previously attached to the [disposable XAYA playground](https://test-arcade.xaya.io/play/penalty-pulse); its public page currently returns 404. A [public listing request](https://github.com/xaya/arcade-submissions/issues/1) has been filed; XAYA review is pending. The source repository is public. A complete live two-account match on the current bundle is still needed and is disclosed in the request.
 
 ## Sources
 
-- [Official XAYA Arcade skills](https://arcade.xaya.io/skills), [rules blob ABI](https://arcade.xaya.io/docs/rules-blob) and [SDK docs](https://arcade.xaya.io/docs/sdk); local official examples at `~/Downloads/xaya-arcade-examples`.
+- [Official XAYA Arcade skills](https://arcade.xaya.io/skills), [rules blob ABI](https://arcade.xaya.io/docs/rules-blob) and [SDK docs](https://arcade.xaya.io/docs/sdk); the local SDK 0.20.7 comes from `~/Downloads/xaya-arcade-examples 2`.
 - [Soccerverse datapack](https://soccerverse.com/developers/datapack-and-assets) and [Soccerverse MCP player data](https://soccerverse.com/developers/soccerverse-mcp).
 - [IFAB penalty shootout procedure](https://www.theifab.com/laws/latest/determining-the-outcome-of-a-match/) for early decisions and equal-attempt sudden death; this game's five-kick format follows the standard shootout length.
